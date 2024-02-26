@@ -89,8 +89,8 @@ WSGI_APPLICATION = "resume_api.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "verceldb,
-        "USER": config("PGUSER")
+        "NAME": "verceldb",
+        "USER": config("PGUSER"),
         "PASSWORD": config("PGPASSWORD"),
         "HOST":  config("HOST"),
         "PORT": "5432",
