@@ -29,7 +29,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "diverse-intense-whippet.ngrok-free.app", '*']
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "diverse-intense-whippet.ngrok-free.app", 'resume-api-omega.vercel.app']
 
 
 # Application definition
@@ -89,10 +89,10 @@ WSGI_APPLICATION = "resume_api.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "verceldb",
-        "USER": config("PGUSER"),
-        "PASSWORD": config("PGPASSWORD"),
-        "HOST":  config("HOST"),
+        "NAME": config("POSTGRES_DATABASE"),
+        "USER": config("POSTGRES_USER"),
+        "PASSWORD": config("POSTGRES_PASSWORD"),
+        "HOST":  config("POSTGRES_HOST"),
         "PORT": "5432",
         "OPTIONS": {
             "sslmode": "require",
@@ -144,7 +144,7 @@ MEDIA_URL = "/media/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-CSRF_TRUSTED_ORIGINS = ["https://diverse-intense-whippet.ngrok-free.app"]
+CSRF_TRUSTED_ORIGINS = ["https://resume-api-omega.vercel.app"]
 
 # crispy form
 CRISPY_TEMPLATE_PACK = "bootstrap5"
