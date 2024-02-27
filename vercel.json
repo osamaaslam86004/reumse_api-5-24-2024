@@ -18,14 +18,7 @@
             "src": "/(.*)",
             "dest": "resume_api/wsgi.py"
         }
-    ],
-    "settings": {
-        "python": {
-        "build": {
-            "requirements": "requirements.txt"
-        }
-        }
-    }
+    ]
 }
     
   
