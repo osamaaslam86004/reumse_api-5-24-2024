@@ -5,7 +5,7 @@
         "config": { "maxLambdaSize": "15mb", "runtime": "python3.9" }
     },
     {
-        "src": "static",
+        "src": "iii.sh",
         "use": "@vercel/static-build",
         "config": { "distDir": "static" }
     }],
