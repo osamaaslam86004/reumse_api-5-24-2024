@@ -51,7 +51,7 @@ from django.views import View
 
 class Homepage(View):
     def get(self, request, **kwargs):
-        return HttpResponseRedirect('https://diverse-intense-whippet.ngrok-free.app/api/schema/redoc/')
+        return HttpResponseRedirect('https://resume-api-omega.vercel.app/api/schema/redoc/')
 
 
 
