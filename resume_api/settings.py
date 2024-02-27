@@ -29,10 +29,10 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-if DEBUG=True:
+if DEBUG:
     ALLOWED_HOSTS = ["127.0.0.1", "localhost", "diverse-intense-whippet.ngrok-free.app"]
 else:
-    ALLOWED_HOSTS = [".vercel.app"]
+    ALLOWED_HOSTS = ["resume-api-pink.vercel.app"]
 
 
 # Application definition
@@ -147,7 +147,7 @@ MEDIA_URL = "/media/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-CSRF_TRUSTED_ORIGINS = ["https://resume-api-omega.vercel.app"]
+CSRF_TRUSTED_ORIGINS = ["https://resume-api-pink.vercel.app"]
 
 # crispy form
 CRISPY_TEMPLATE_PACK = "bootstrap5"
