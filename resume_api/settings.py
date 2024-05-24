@@ -15,7 +15,6 @@ import os
 from decouple import config
 
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -66,7 +65,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware"
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 ROOT_URLCONF = "resume_api.urls"
@@ -94,9 +93,9 @@ WSGI_APPLICATION = "resume_api.wsgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 if not DEBUG:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',  # Path to your SQLite database file
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",  # Path to your SQLite database file
         }
     }
 
@@ -107,11 +106,11 @@ else:
             "NAME": config("POSTGRES_DATABASE"),
             "USER": config("POSTGRES_USER"),
             "PASSWORD": config("POSTGRES_PASSWORD"),
-            "HOST":  config("POSTGRES_HOST"),
+            "HOST": config("POSTGRES_HOST"),
             "PORT": "5432",
             "OPTIONS": {
                 "sslmode": "require",
-            }
+            },
         }
     }
 
@@ -157,11 +156,12 @@ MEDIA_URL = "/media/"
 
 ##################################---------- CORS settings---------------##################################
 CORS_ALLOWED_ORIGINS = [
-    "https://osama11111.pythonanywhere.com"
+    "https://osama11111.pythonanywhere.com",
     "https://vercel-3-5-2024.vercel.app",
     "https://web.postman.co",
-    "diverse-intense-whippet.ngrok-free.app"
+    "https://diverse-intense-whippet.ngrok-free.app",
 ]
+
 CORS_ALLOW_METHODS = [
     "DELETE",
     "GET",
@@ -171,20 +171,24 @@ CORS_ALLOW_METHODS = [
     "PUT",
 ]
 CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
 ]
 
 
 if DEBUG:
-    CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1", "http://localhost", "https://diverse-intense-whippet.ngrok-free.app"]
+    CSRF_TRUSTED_ORIGINS = [
+        "http://127.0.0.1",
+        "http://localhost",
+        "https://diverse-intense-whippet.ngrok-free.app",
+    ]
 else:
     # authenticate teh request only, checking if it has CSRF token comming here from django-e-commrace
     CSRF_TRUSTED_ORIGINS = [
@@ -192,9 +196,7 @@ else:
         "https://osama11111.pythonanywhere.com",
         "https://vercel-3-5-2024.vercel.app",
         "https://web.postman.co",
-        "https://diverse-intense-whippet.ngrok-free.app"]
-
-
+    ]
 
 
 # Default primary key field type
@@ -218,8 +220,6 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 
 # User Model
 AUTH_USER_MODEL = "api_auth.CustomUser"
-
-
 
 
 #  Stateless Authentication
@@ -247,14 +247,13 @@ AUTH_USER_MODEL = "api_auth.CustomUser"
 REST_FRAMEWORK = {
     # 'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication'),
     # 'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema"
 }
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'My API',
-    'DESCRIPTION': 'API documentation for My API',
-    'VERSION': '1.0.0'
+    "TITLE": "My API",
+    "DESCRIPTION": "API documentation for My API",
+    "VERSION": "1.0.0",
 }
-
 
 
 # Authorization: JWTs can contain claims (such as user roles or permissions)
@@ -262,13 +261,13 @@ SPECTACULAR_SETTINGS = {
 # JWTs consist of three parts: a header, a payload, and a signature.
 # They are encoded as base64 strings and separated by dots (.).
 from datetime import timedelta
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=250),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=10),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "UPDATE_LAST_LOGIN": False,
-
     "ALGORITHM": "HS256",
     "SIGNING_KEY": "django-insecure-o_j80u+4owpa-&!$%&j&n@r0d6&)9kbutwi!m&j-v*b(ems*=d",
     "VERIFYING_KEY": "",
@@ -277,21 +276,16 @@ SIMPLE_JWT = {
     "JSON_ENCODER": None,
     "JWK_URL": None,
     "LEEWAY": 0,
-
     "AUTH_HEADER_TYPES": ("Bearer",),
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
     "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
-
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_TYPE_CLAIM": "token_type",
     "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
-
     "JTI_CLAIM": "jti",
-
     "TOKEN_OBTAIN_SERIALIZER": "api_auth.serializers.TokenClaimObtainPairSerializer",
     "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
     "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
-
 }
