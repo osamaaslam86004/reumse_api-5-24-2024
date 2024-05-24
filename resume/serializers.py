@@ -14,7 +14,7 @@ from resume.models import (
 )
 from api_auth.models import CustomUser
 from django.core.exceptions import ValidationError  # Import ValidationError
-
+from django.db import transaction
 
 
 
@@ -263,31 +263,32 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
 
         self.validate_programming_area_model_fields(programming_area_data)
         try:
-            user_id = self.context.get('user_id')
-            if user_id:
-                personal_info = PersonalInfo.objects.create(user_id, **validated_data)
-            else:
-                personal_info = PersonalInfo.objects.create(**validated_data)
+            with transaction.atomic():
+                user_id = self.context.get('user_id')
+                if user_id:
+                    personal_info = PersonalInfo.objects.create(user_id, **validated_data)
+                else:
+                    personal_info = PersonalInfo.objects.create(**validated_data)
+
+                Overview.objects.create(personal_info=personal_info, **overview_data)
+
+                for item in education_data:
+                    Education.objects.create(personal_info=personal_info, **item)
+
+                job_accomplishment_data = job_data.pop("accomplishment")
+                job_created = Job.objects.create(personal_info_job=personal_info, **job_data)
+                JobAccomplishment.objects.create(job=job_created, **job_accomplishment_data)
+
+                for item in skill_data:
+                    SkillAndSkillLevel.objects.create(personal_info=personal_info, **item)
+                for item in programming_area_data:
+                    ProgrammingArea.objects.create(personal_info=personal_info, **item)
+                for item in projects_data:
+                    Projects.objects.create(personal_info=personal_info, **item)
+                for item in publication_data:
+                    Publication.objects.create(personal_info=personal_info, **item)
         except Exception as e:
             raise ValidationError (str(e))
-        Overview.objects.create(personal_info=personal_info, **overview_data)
-
-        for item in education_data:
-            Education.objects.create(personal_info=personal_info, **item)
-
-        job_accomplishment_data = job_data.pop("accomplishment")
-        job_created = Job.objects.create(personal_info_job=personal_info, **job_data)
-        JobAccomplishment.objects.create(job=job_created, **job_accomplishment_data)
-
-        for item in skill_data:
-            SkillAndSkillLevel.objects.create(personal_info=personal_info, **item)
-        for item in programming_area_data:
-            ProgrammingArea.objects.create(personal_info=personal_info, **item)
-        for item in projects_data:
-            Projects.objects.create(personal_info=personal_info, **item)
-        for item in publication_data:
-            Publication.objects.create(personal_info=personal_info, **item)
-            
         return personal_info
 
 
@@ -297,17 +298,18 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         try:
             # # instance here is the instance of PersonalInfo model
-            self.update_personal_info(instance, validated_data)
-            self.update_overview(instance, validated_data)
-            self.update_education(instance, validated_data)
-            self.update_job(instance, validated_data)
-            self.update_skill_and_skill_level(instance, validated_data)
-            self.update_programming_area(instance, validated_data)
-            self.update_projects(instance, validated_data)
-            self.update_publications(instance, validated_data)
+            with transaction.atomic():
+                self.update_personal_info(instance, validated_data)
+                self.update_overview(instance, validated_data)
+                self.update_education(instance, validated_data)
+                self.update_job(instance, validated_data)
+                self.update_skill_and_skill_level(instance, validated_data)
+                self.update_programming_area(instance, validated_data)
+                self.update_projects(instance, validated_data)
+                self.update_publications(instance, validated_data)
         except Exception as e:
             raise ValidationError (str(e))
-            
+
         return instance
 
     def update_personal_info(self, instance, validated_data):
@@ -343,8 +345,8 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
             instance.save()
         except Exception as e:
             raise ValidationError (str(e))
- 
-            
+
+
 
     def update_overview(self, instance, validated_data):
 
@@ -424,8 +426,8 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
                         )
                     else:
                         setattr(job_instance, field, value)
-            job_instance.save()           
-            
+            job_instance.save()
+
             job_accomp_instance = job_instance.accomplishment
             job_accomplishment_data = job_data.pop("accomplishment")
             # for index, item_ in enumerate(job_accomplishment_data):
@@ -442,10 +444,10 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
         skill_instance_list = SkillAndSkillLevel.objects.filter(
             personal_info__id=instance.id
         )
-        if not skill_instance_list:
-            raise serializers.ValidationError(
-                f"skill instances with Personal ID {instance.id} does not exist."
-            )
+        # if not skill_instance_list:
+        #     raise serializers.ValidationError(
+        #         f"skill instances with Personal ID {instance.id} does not exist."
+        #     )
         attributes_list = ["text", "skill_level"]
 
         count = 0
@@ -475,10 +477,10 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
         programming_instance_list = ProgrammingArea.objects.filter(
             personal_info__id=instance.id
         )
-        if not programming_instance_list:
-            raise serializers.ValidationError(
-                f"Programming instances with Personal ID {instance.id} does not exist."
-            )
+        # if not programming_instance_list:
+        #     raise serializers.ValidationError(
+        #         f"Programming instances with Personal ID {instance.id} does not exist."
+        #     )
 
         for index, item in enumerate(ProgrammingArea_data):
             try:
@@ -510,10 +512,10 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
         ]
 
         project_instance_list = Projects.objects.filter(personal_info__id=instance.id)
-        if not project_instance_list:
-            raise serializers.ValidationError(
-                f"Project instances with Personal ID {instance.id} does not exist."
-            )
+        # if not project_instance_list:
+        #     raise serializers.ValidationError(
+        #         f"Project instances with Personal ID {instance.id} does not exist."
+        #     )
         for index, item in enumerate(Project_data):
             try:
                 for field, value in item.items():
@@ -542,10 +544,10 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
         ]
 
         pub_instance_list = Publication.objects.filter(personal_info__id=instance.id)
-        if not pub_instance_list:
-            raise serializers.ValidationError(
-                f"Publication instances with Personal ID {instance.id} does not exist."
-            )
+        # if not pub_instance_list:
+        #     # raise serializers.ValidationError(
+        #     #     f"Publication instances with Personal ID {instance.id} does not exist."
+        #     # )
         for index, item in enumerate(publication_data):
             try:
                 for field, value in item.items():

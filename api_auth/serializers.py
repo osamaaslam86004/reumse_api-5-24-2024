@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import CustomUser
-from rest_framework_simplejwt.tokens import RefreshToken
+# from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -16,7 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
         #           "locality", "facebook"]
         fields = ["id", 'email', 'username', 'password', "is_staff", "is_active"]
     def create(self, validated_data):
-   
+
         user = CustomUser.objects.create_user(
             email=validated_data['email'],
             username=validated_data['username'],

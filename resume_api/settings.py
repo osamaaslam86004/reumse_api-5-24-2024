@@ -32,7 +32,7 @@ DEBUG = False
 if DEBUG:
     ALLOWED_HOSTS = ["127.0.0.1", "localhost", "diverse-intense-whippet.ngrok-free.app"]
 else:
-    ALLOWED_HOSTS = ["resume-api-pink.vercel.app"]
+    ALLOWED_HOSTS = ["osamaaslam.pythonanywhere.com"]
 
 
 # Application definition
@@ -52,17 +52,21 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     "rest_framework_simplejwt",
-    "drf_spectacular"
+    "drf_spectacular",
+    # "corsheaders"
 ]
 
 MIDDLEWARE = [
+    #  "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "resume_api.cors.CustomCorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware"
 ]
 
 ROOT_URLCONF = "resume_api.urls"
@@ -88,15 +92,14 @@ WSGI_APPLICATION = "resume_api.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-if DEBUG:
+if not DEBUG:
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "OPTIONS": {
-                "read_default_file": "/path/to/my.cnf",
-            },
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',  # Path to your SQLite database file
         }
     }
+
 else:
     DATABASES = {
         "default": {
@@ -152,14 +155,52 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
 
 
+##################################---------- CORS settings---------------##################################
+CORS_ALLOWED_ORIGINS = [
+    "https://osama11111.pythonanywhere.com"
+    "https://vercel-3-5-2024.vercel.app",
+    "https://web.postman.co",
+    "diverse-intense-whippet.ngrok-free.app"
+]
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1", "http://localhost", "https://diverse-intense-whippet.ngrok-free.app"]
+else:
+    # authenticate teh request only, checking if it has CSRF token comming here from django-e-commrace
+    CSRF_TRUSTED_ORIGINS = [
+        "https://osamaaslam.pythonanywhere.com",
+        "https://osama11111.pythonanywhere.com",
+        "https://vercel-3-5-2024.vercel.app",
+        "https://web.postman.co",
+        "https://diverse-intense-whippet.ngrok-free.app"]
+
+
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-if DEBUG:
-    CSRF_TRUSTED_ORIGINS = ["127.0.0.1", "localhost", "diverse-intense-whippet.ngrok-free.app"]
-else:
-   CSRF_TRUSTED_ORIGINS = ["https://resume-api-pink.vercel.app"]
 
 
 # crispy form
@@ -182,34 +223,30 @@ AUTH_USER_MODEL = "api_auth.CustomUser"
 
 
 #  Stateless Authentication
-# In stateless authentication, the server doesn't keep track of the user's state (session). 
-# Each request from the client must contain all the information necessary to authenticate the user, 
+# In stateless authentication, the server doesn't keep track of the user's state (session).
+# Each request from the client must contain all the information necessary to authenticate the user,
 # including the JWT token. The server verifies this token on every request to ensure the user is authenticated.
 
 # How to Use JWT Stateless Authentication in Django Rest Framework?
-# In Django Rest Framework, you've configured the rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication 
+# In Django Rest Framework, you've configured the rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication
 # as one of the default authentication classes. This means that any request coming to your API endpoints
 #  needs to include a valid JWT token in the request headers for authentication.
 
 # Checking Token Validity
-# When a request comes in, Django Rest Framework automatically checks the JWT token provided 
-# in the request headers. It verifies the token's signature to ensure it hasn't been tampered with. 
-# If the signature is valid and the token hasn't expired, the request is considered authenticated, 
+# When a request comes in, Django Rest Framework automatically checks the JWT token provided
+# in the request headers. It verifies the token's signature to ensure it hasn't been tampered with.
+# If the signature is valid and the token hasn't expired, the request is considered authenticated,
 # and Django Rest Framework proceeds with processing the request.
 
 # Handling Authentication Errors
-# If the token is missing or invalid, Django Rest Framework returns an authentication error, 
-# indicating that the user is not authenticated. It's then up to the client-side application 
-# to handle this error appropriately, usually by prompting the user to log in again or refreshing 
+# If the token is missing or invalid, Django Rest Framework returns an authentication error,
+# indicating that the user is not authenticated. It's then up to the client-side application
+# to handle this error appropriately, usually by prompting the user to log in again or refreshing
 # the token if it has expired.
 
-REST_FRAMEWORK = { # when this settings is not present, ModelSetets will use default classes 
-                   # for Authentication, Meta-data, Permission etc Hint: those in mentioned in classy DRF
-    # 'DEFAULT_AUTHENTICATION_CLASSES': (
-    #     'rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication'),
-
-    # 'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated'),
-    # 'DEFAULT_METADATA_CLASS': 'api_auth.custom_meta_data_class.CustomMetadata',
+REST_FRAMEWORK = {
+    # 'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication'),
+    # 'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
 }
 SPECTACULAR_SETTINGS = {
@@ -220,9 +257,9 @@ SPECTACULAR_SETTINGS = {
 
 
 
-# Authorization: JWTs can contain claims (such as user roles or permissions) 
+# Authorization: JWTs can contain claims (such as user roles or permissions)
 # to authorize access to certain resources.
-# JWTs consist of three parts: a header, a payload, and a signature. 
+# JWTs consist of three parts: a header, a payload, and a signature.
 # They are encoded as base64 strings and separated by dots (.).
 from datetime import timedelta
 SIMPLE_JWT = {

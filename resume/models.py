@@ -250,7 +250,7 @@ class Projects(models.Model):
         blank=True, help_text="Text shown in modals appearing when clicking on images"
     )
     link = models.URLField(blank=True)
-  
+
 
     def save(self, *args, **kwargs):
         if not self.long_description:

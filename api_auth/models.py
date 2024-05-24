@@ -1,11 +1,14 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.contrib.auth import authenticate
+
+
 
 class CustomUserManager(BaseUserManager):
     # def create_user(self, email, username, password=None):
     def create_user(self, **kwargs):
         email =  kwargs['email']
-  
+
         password = kwargs["password"]
 
         if not email:
@@ -25,6 +28,16 @@ class CustomUserManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
+
+
+    def get_user(self, email, username, password):
+
+        user = authenticate(email=email, password=password)
+        if user:
+            return user
+        else:
+            return None
+
 
     def create_superuser(self, email, username, password):
         user = self.create_user(
