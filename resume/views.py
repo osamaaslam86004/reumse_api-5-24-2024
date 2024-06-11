@@ -131,18 +131,18 @@ class PersonalInfoWizard(SessionWizardView):
                 )
 
         else:
-            PersonalInfo = form_list[0].cleaned_data
+            PersonalInfo = form_list[0]
             PersonalInfo.save(commit=False)
             del PersonalInfo["condition"]
 
-            publication_data = form_list[2].cleaned_data
-            over_view = form_list[3].cleaned_data
-            education_data = form_list[4].cleaned_data
-            job_data = form_list[5].cleaned_data
-            job_accomplishment_data = form_list[6].cleaned_data
-            skill_and_skill_level_data = form_list[7].cleaned_data
-            programming_area_data = form_list[8].cleaned_data
-            projects_data = form_list[9].cleaned_data
+            publication_data = form_list[2]
+            over_view = form_list[3]
+            education_data = form_list[4]
+            job_data = form_list[5]
+            job_accomplishment_data = form_list[6]
+            skill_and_skill_level_data = form_list[7]
+            programming_area_data = form_list[8]
+            projects_data = form_list[9]
 
             publication = publication_data.save(commit=False)
             overview = over_view.save(commit=False)
