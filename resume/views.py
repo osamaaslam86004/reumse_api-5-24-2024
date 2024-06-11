@@ -135,14 +135,14 @@ class PersonalInfoWizard(SessionWizardView):
             del PersonalInfo.cleaned_data["condition"]
             PersonalInfo.save(commit=False)
 
-            publication_data = form_list[2]
-            over_view = form_list[3]
-            education_data = form_list[4]
-            job_data = form_list[5]
-            job_accomplishment_data = form_list[6]
-            skill_and_skill_level_data = form_list[7]
-            programming_area_data = form_list[8]
-            projects_data = form_list[9]
+            publication_data = form_list[1]
+            over_view = form_list[2]
+            education_data = form_list[3]
+            job_data = form_list[4]
+            job_accomplishment_data = form_list[5]
+            skill_and_skill_level_data = form_list[6]
+            programming_area_data = form_list[7]
+            projects_data = form_list[8]
 
             publication = publication_data.save(commit=False)
             overview = over_view.save(commit=False)
