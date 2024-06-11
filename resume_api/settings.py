@@ -25,8 +25,29 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY")
 
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
+# Close any open connections to vercel db or print the session details
+if DEBUG:
+    try:
+        import psycopg2
+
+        conn = psycopg2.connect(
+            "postgres://default:A9dGRnxcCk2b@ep-bold-scene-a4j046n4.us-east-1.aws.neon.tech:5432/verceldb?sslmode=require"
+        )
+        conn.close()
+    except:
+        from django.contrib.sessions.models import Session
+        from django.utils import timezone
+
+        active_sessions = Session.objects.filter(expire_date__gt=timezone.now())
+        for session in active_sessions:
+            session_key = session.session_key
+            session_data = session.get_decoded()
+            user_id = session_data.get("_auth_user_id", "Anonymous")
+            print(f"Session Key: {session_key}, User ID: {user_id}")
+
 
 if DEBUG:
     ALLOWED_HOSTS = ["127.0.0.1", "localhost", "diverse-intense-whippet.ngrok-free.app"]
@@ -52,15 +73,12 @@ INSTALLED_APPS = [
     "crispy_bootstrap5",
     "rest_framework_simplejwt",
     "drf_spectacular",
-    # "corsheaders"
 ]
 
 MIDDLEWARE = [
-    #  "corsheaders.middleware.CorsMiddleware",
+    "resume_api.cors.CustomCorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "resume_api.cors.CustomCorsMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -91,11 +109,11 @@ WSGI_APPLICATION = "resume_api.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-if not DEBUG:
+if DEBUG:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",  # Path to your SQLite database file
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     }
 
@@ -114,6 +132,17 @@ else:
         }
     }
 
+
+# Cache configuration
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    },
+    "alternate": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "my_cache_table",
+    },
+}
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -210,14 +239,6 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 
 
-# cloudinary storages
-# CLOUDINARY_STORAGE = {
-#     "CLOUD_NAME": "dh8vfw5u0",
-#     "API_KEY": "667912285456865",
-#     "API_SECRET": "QaF0OnEY-W1v2GufFKdOjo3KQm8",
-# }
-# DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
-
 # User Model
 AUTH_USER_MODEL = "api_auth.CustomUser"
 
@@ -244,17 +265,39 @@ AUTH_USER_MODEL = "api_auth.CustomUser"
 # to handle this error appropriately, usually by prompting the user to log in again or refreshing
 # the token if it has expired.
 
-REST_FRAMEWORK = {
-    # 'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication'),
-    # 'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema"
-}
+from django.conf import settings
+
+if settings.DEBUG:
+    REST_FRAMEWORK = {
+        "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+        "DEFAULT_THROTTLE_CLASSES": [
+            "resume_api.custom_user_rated_throtle_class.CustomAnonRateThrottle",
+            "resume_api.custom_user_rated_throtle_class.CustomUserRateThrottle",
+        ],
+        "DEFAULT_THROTTLE_RATES": {
+            "anon": "2/hour",
+            "user": "3/hour",
+        },
+    }
+else:
+    REST_FRAMEWORK = {
+        "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+        "DEFAULT_THROTTLE_CLASSES": [
+            "resume_api.custom_user_rated_throtle_class.CustomAnonRateThrottle",
+            "resume_api.custom_user_rated_throtle_class.CustomUserRateThrottle",
+        ],
+        "DEFAULT_THROTTLE_RATES": {
+            "anon": "200/hour",
+            "user": "200/hour",
+        },
+    }
+
+
 SPECTACULAR_SETTINGS = {
-    "TITLE": "My API",
-    "DESCRIPTION": "API documentation for My API",
+    "TITLE": "Resume API",
+    "DESCRIPTION": "API documentation for Resume API",
     "VERSION": "1.0.0",
 }
-
 
 # Authorization: JWTs can contain claims (such as user roles or permissions)
 # to authorize access to certain resources.
@@ -263,7 +306,7 @@ SPECTACULAR_SETTINGS = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=250),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=2500),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=10),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,

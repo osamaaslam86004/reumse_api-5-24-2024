@@ -10,18 +10,17 @@ from resume.models import (
     ProgrammingArea,
     Publication,
     Projects,
-    Publication
+    Publication,
 )
 from api_auth.models import CustomUser
 from django.core.exceptions import ValidationError  # Import ValidationError
 from django.db import transaction
 
 
-
 class PublicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Publication
-        fields =   ["title", "authors", "journal", "year", "link"]
+        fields = ["title", "authors", "journal", "year", "link"]
         read_only = ["id"]
 
 
@@ -122,8 +121,9 @@ class ProgrammingAreaSerializer(serializers.ModelSerializer):
 class SkillAndSkillLevelSerializer(serializers.ModelSerializer):
     class Meta:
         model = SkillAndSkillLevel
-        fields = "__all__"
+        fields = ["text", "skill_level"]
         read_only_fields = ["id"]
+
 
 class JobAccomplishmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -137,17 +137,18 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = [
-            'company',
-            'companyurl',
-            'location',
-            'title',
-            'description',
-            'job_start_date',
-            'job_end_date',
-            'is_current',
-            'is_public',
-            'image',
-            "accomplishment"]
+            "company",
+            "companyurl",
+            "location",
+            "title",
+            "description",
+            "job_start_date",
+            "job_end_date",
+            "is_current",
+            "is_public",
+            "image",
+            "accomplishment",
+        ]
 
 
 class EducationDetailSerializer(serializers.ModelSerializer):
@@ -201,10 +202,6 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
     projects = ProjectsSerializer(many=True)
     publications = PublicationSerializer(many=True)
 
-
-
-
-
     class Meta:
         model = PersonalInfo
         fields = [
@@ -229,7 +226,7 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
             "job",
             "programming_area",
             "projects",
-            "publications"
+            "publications",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -238,8 +235,6 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
         # self = {context={request, format, view}, data = **kwargs }
         super(PersonalInfo_Serializer, self).__init__(*args, **kwargs)
         self.instance_of_Programming_area = ProgrammingAreaSerializer()
-
-
 
     def validate_programming_area_model_fields(self, programming_area_data):
         for item in programming_area_data:
@@ -250,6 +245,7 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
             )
 
     def create(self, validated_data):
+        self.is_create = True
 
         overview_data = validated_data.pop("overview")
         education_data = validated_data.pop("education")
@@ -259,14 +255,14 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
         projects_data = validated_data.pop("projects")
         publication_data = validated_data.pop("publications")
 
-
-
         self.validate_programming_area_model_fields(programming_area_data)
         try:
             with transaction.atomic():
-                user_id = self.context.get('user_id')
+                user_id = self.context.get("user_id")
                 if user_id:
-                    personal_info = PersonalInfo.objects.create(user_id, **validated_data)
+                    personal_info = PersonalInfo.objects.create(
+                        user_id, **validated_data
+                    )
                 else:
                     personal_info = PersonalInfo.objects.create(**validated_data)
 
@@ -276,11 +272,17 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
                     Education.objects.create(personal_info=personal_info, **item)
 
                 job_accomplishment_data = job_data.pop("accomplishment")
-                job_created = Job.objects.create(personal_info_job=personal_info, **job_data)
-                JobAccomplishment.objects.create(job=job_created, **job_accomplishment_data)
+                job_created = Job.objects.create(
+                    personal_info_job=personal_info, **job_data
+                )
+                JobAccomplishment.objects.create(
+                    job=job_created, **job_accomplishment_data
+                )
 
                 for item in skill_data:
-                    SkillAndSkillLevel.objects.create(personal_info=personal_info, **item)
+                    SkillAndSkillLevel.objects.create(
+                        personal_info=personal_info, **item
+                    )
                 for item in programming_area_data:
                     ProgrammingArea.objects.create(personal_info=personal_info, **item)
                 for item in projects_data:
@@ -288,14 +290,12 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
                 for item in publication_data:
                     Publication.objects.create(personal_info=personal_info, **item)
         except Exception as e:
-            raise ValidationError (str(e))
+            raise ValidationError(str(e))
         return personal_info
 
-
-
-
-
     def update(self, instance, validated_data):
+        self.is_create = False  # Set a flag for update
+
         try:
             # # instance here is the instance of PersonalInfo model
             with transaction.atomic():
@@ -308,7 +308,7 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
                 self.update_projects(instance, validated_data)
                 self.update_publications(instance, validated_data)
         except Exception as e:
-            raise ValidationError (str(e))
+            raise ValidationError({"detail": str(e)})
 
         return instance
 
@@ -331,22 +331,21 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
             "twittername",
         ]
 
-
         try:
-            id_user = self.context.get('user_id')
+            id_user = self.context.get("user_id")
 
             for field in fields_to_update:
                 if "user_id" in validated_data:
                     setattr(
-                        instance, field, validated_data.get(field, getattr(instance, field))
+                        instance,
+                        field,
+                        validated_data.get(field, getattr(instance, field)),
                     )
                 else:
                     instance.user_id = CustomUser.objects.get(id=id_user)
             instance.save()
         except Exception as e:
-            raise ValidationError (str(e))
-
-
+            raise ValidationError({"detail": str(e)})
 
     def update_overview(self, instance, validated_data):
 
@@ -432,10 +431,9 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
             job_accomplishment_data = job_data.pop("accomplishment")
             # for index, item_ in enumerate(job_accomplishment_data):
             job_accomp_instance.job_accomplishment = job_accomplishment_data.get(
-                "job_accomplishment",
-                job_accomp_instance.job_accomplishment)
+                "job_accomplishment", job_accomp_instance.job_accomplishment
+            )
             job_accomp_instance.save()
-
 
     def update_skill_and_skill_level(self, instance, validated_data):
         if "skill" not in validated_data:
@@ -562,9 +560,6 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
                 Publication.objects.create(personal_info=instance, **item)
 
 
-
-
-
 class PersonalInfo__Serializer(serializers.ModelSerializer):
     class Meta:
         model = PersonalInfo
@@ -581,8 +576,8 @@ class PersonalInfo__Serializer(serializers.ModelSerializer):
             "facebook",
             "github",
             "site",
-            "twittername"]
-
+            "twittername",
+        ]
 
     def update(self, instance, validated_data):
         self.update_personal_info(instance, validated_data)
@@ -610,4 +605,3 @@ class PersonalInfo__Serializer(serializers.ModelSerializer):
                 instance, field, validated_data.get(field, getattr(instance, field))
             )
         instance.save()
-

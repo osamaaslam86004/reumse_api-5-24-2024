@@ -1,67 +1,108 @@
-
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import logging
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 
 class CustomCorsMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-        self.allowed_origins = getattr(settings, 'CORS_ALLOWED_ORIGINS', [])
-        self.allowed_headers = getattr(settings, 'CORS_ALLOW_HEADERS', [])
-        self.trusted_csrf_origins = getattr(settings, 'CSRF_TRUSTED_ORIGINS', [])
-        self.allowed_methods = getattr(settings, 'CORS_ALLOW_METHODS', [])
-        self.host_url = "osamaaslam.pythonanywhere.com"
+        self.allowed_origins = getattr(settings, "CORS_ALLOWED_ORIGINS", [])
+        self.trusted_csrf_origins = getattr(settings, "CSRF_TRUSTED_ORIGINS", [])
+        self.allowed_hosts = getattr(settings, "ALLOWED_HOSTS", [])
+        # self.host_url = "osamaaslam.pythonanywhere.com"
 
     def __call__(self, request):
-        origin = request.headers.get('Origin')
+        origin = request.headers.get("Origin")
         logger.info(f"Request Origin: {origin}")
-        host = request.headers.get('Host')
+        host = request.headers.get("Host")
         logger.info(f"Request Host: {host}")
 
-
-        # A preflight request is made when the actual request falls into one of the following categories:
-
-        #     1.     When your application uses methods other than GET, HEAD, or POST, the browser will initiate a preflight
-        #     request to ask the server for permission before sending the actual request.
-        #     2.     Custom headers: If your request includes headers that are not included in the simple headers defined in
-        #     the CORS specification, a preflight request will be sent.
-
-        #     An HTTP OPTIONS request that includes additional information about the intended request,
-        #     such as HTTP method, headers, and content type, is referred to as a preflight request.
-        #     The server receiving the preflight request must respond with CORS headers indicating whether
-        #     the actual request should be permitted. In these headers, "Access-Control-Allow-Origin" specifies
-        #     the allowed origins, "Access-Control-Allow-Methods" specifies the allowed HTTP methods, and "Access-Control-Allow-Headers"
-        #     specifies the allowed headers.
-
         # Combine both allowed origins and CSRF trusted origins
-        combined_origins = self.allowed_origins + self.trusted_csrf_origins     # this will allow CORS to submit forms using CSRF token validation
+        combined_origins = (
+            self.allowed_origins + self.trusted_csrf_origins
+        )  # this will allow CORS to submit forms using CSRF token validation
         logger.info(f"Combined Origins: {combined_origins}")
 
-        # Check if the origin is allowed
-        if origin in combined_origins:
-            if request.method == 'OPTIONS':
-                response = HttpResponse()
-                response["Access-Control-Allow-Origin"] = origin
-                response["Access-Control-Allow-Methods"] = ', '.join(self.allowed_methods)
-                response["Access-Control-Allow-Headers"] = ', '.join(self.allowed_headers)
-                response["Access-Control-Allow-Credentials"] = 'true'
-                response["Access-Control-Max-Age"] = 86400
-                response["Access-Control-Expose-Headers"] = "*"
-
-            else:
-                response = self.get_response(request)
-                response["Access-Control-Allow-Origin"] = origin
-                response["Access-Control-Allow-Methods"] = ', '.join(self.allowed_methods)
-                response["Access-Control-Allow-Headers"] = ', '.join(self.allowed_headers)
-                response["Access-Control-Allow-Credentials"] = 'true'
-
-        elif host == self.host_url:
-             response = self.get_response(request)
+        response = self.process_request_before_process_view(
+            request, combined_origins, host
+        )
+        if response:
+            return response
         else:
-            response = HttpResponse("Origin not allowed", status=403)
+            response = self.get_response(request)
+            response = self.process_response(request, response)
+            return response
+
+    def process_request_before_process_view(self, request, combined_origins, host):
+        """
+        process the request before self.process_view() is called
+        """
+        origin = request.headers.get("Origin")
+        if origin in combined_origins:
+            return None
+        elif host in self.allowed_hosts:
+            return None
+        else:
+            return JsonResponse({"detail": "Origin not allowed"}, status=403)
+
+    def process_response(self, request, response):
+        # for header in response.headers:
+        #     print(
+        #         f"header name in middleware: {header}-------------------- : {response.headers[header]}"
+        #     )
+
+        # Do not enforce Origin if it's already set correctly
+        origin = request.headers.get("Origin")
+        if origin:
+            response["Access-Control-Allow-Origin"] = origin
+
+        # Do not enforce Content-Type if it's already set correctly
+        if response.get("Content-Type", "").startswith("application/json"):
+            response["Content-Type"] = "application/json"
+
+        if "Allow" in response.headers:
+            response["Access-Control-Allow-Methods"] = response.headers["Allow"]
+
+        # Remove "Cookie" from SessionMiddleWare
+        vary_headers = response.headers.get("Vary", "").split(", ")
+        if "Cookie" in vary_headers:
+            vary_headers.remove("Cookie")
+        response.headers["Vary"] = ", ".join(vary_headers)
+
+        # response["Access-Control-Allow-Credentials"] = "true"
+        """
+        added "Access-Control-Allow-Headers" after updating "Vary", it will automatically updates
+        the Vary header value in the Access-Control-Allow-Headers dictionary. This dictioanry 
+        is mentioned in comments below:
+        """
+        response["Access-Control-Allow-Headers"] = response.headers
+
+        for header in response.headers:
+            print(
+                f"header coming out of API: {header}--------- : {response.headers[header]}"
+            )
 
         return response
 
+
+# Notes
+
+# Access-Control-Allowed-Headers in response:
+# it is a dictionay of all allowed headers alongwith the header values
+
+# {
+# 'Content-Type': 'application/json',
+# 'X-RateLimit-Limit': '2/hour',
+# 'X-RateLimit-Remaining': '1',
+#  'Allow': 'POST, OPTIONS',
+#  'Vary': 'User-Agent, Cookie',
+# 'Cache-Control': 'private',
+#  'X-Frame-Options': 'DENY',
+# 'Content-Length': '104',
+# 'X-Content-Type-Options': 'nosniff',
+#  'Referrer-Policy': 'same-origin', 'Cross-Origin-Opener-Policy': 'same-origin',
+#  'Access-Control-Allow-Origin': 'https://web.postman.co'
+
+# }

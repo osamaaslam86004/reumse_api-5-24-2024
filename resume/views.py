@@ -1,12 +1,4 @@
-from django.shortcuts import render
-from resume.models import (
-    PersonalInfo,
-    Overview,
-    Education,
-    Projects,
-    ProgrammingArea,
-    SkillAndSkillLevel,
-)
+from resume.models import PersonalInfo
 from resume.forms import (
     PersonalInfoForm,
     OverviewForm,
@@ -19,15 +11,7 @@ from resume.forms import (
     SkillAndSkillLevelForm,
 )
 from resume.resume_pagination import LargeResultsSetPagination
-from resume.serializers import (
-    PersonalInfo_Serializer,
-    OverviewSerializer,
-    EducationListCreateSerializer,
-    ProjectsSerializer,
-    SkillAndSkillLevelSerializer,
-    ProgrammingAreaSerializer,
-    PersonalInfo__Serializer,
-)
+from resume.serializers import PersonalInfo_Serializer
 from django.http import (
     HttpResponseRedirect,
     HttpResponsePermanentRedirect,
@@ -36,9 +20,15 @@ from django.http import (
 from formtools.wizard.views import SessionWizardView
 import json, requests
 from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import JSONParser
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
+from django.views.decorators.cache import cache_control
+
+# from rest_framework.decorators import action
 from django.db import transaction
 from api_auth.models import CustomUser
 from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
@@ -46,54 +36,19 @@ from rest_framework.permissions import IsAuthenticated
 from django.views import View
 from django.contrib import messages
 from django.conf import settings
+from resume_api.custom_user_rated_throtle_class import CustomUserRateThrottle
 
 
 class Homepage(View):
     def get(self, request, **kwargs):
-        # return HttpResponseRedirect('https://resume-api-pink.vercel.app/api/schema/redoc/')
-        return HttpResponseRedirect(
-            "https://osamaaslam.pythonanywhere.com/api/schema/redoc/"
-        )
-
-
-class PersonalInfoViewSet(viewsets.ModelViewSet):
-    queryset = PersonalInfo.objects.order_by("-id")
-    serializer_class = PersonalInfo__Serializer
-    lookup_field = "id"
-    pagination_class = LargeResultsSetPagination
-
-
-class OverviewViewSet(viewsets.ModelViewSet):
-    queryset = Overview.objects.order_by("-id")
-    serializer_class = OverviewSerializer
-    lookup_field = "id"
-
-
-class EducationViewSet(viewsets.ModelViewSet):
-    queryset = Education.objects.order_by("-id")
-    serializer_class = EducationListCreateSerializer
-    lookup_field = "id"
-    pagination_class = LargeResultsSetPagination
-
-
-class SkillViewSet(viewsets.ModelViewSet):
-    queryset = SkillAndSkillLevel.objects.order_by("-id")
-    serializer_class = SkillAndSkillLevelSerializer
-    lookup_field = "id"
-    pagination_class = LargeResultsSetPagination
-
-
-class ProgrammingAreaViewSet(viewsets.ModelViewSet):
-    queryset = ProgrammingArea.objects.order_by("-id")
-    serializer_class = ProgrammingAreaSerializer
-    lookup_field = "id"
-
-
-class ProjectsViewSet(viewsets.ModelViewSet):
-    queryset = Projects.objects.order_by("-id")
-    serializer_class = ProjectsSerializer
-    lookup_field = "id"
-    pagination_class = LargeResultsSetPagination
+        if not settings.DEBUG:
+            return HttpResponseRedirect(
+                "https://osamaaslam.pythonanywhere.com/api/schema/redoc/"
+            )
+        else:
+            return HttpResponseRedirect(
+                "https://diverse-intense-whippet.ngrok-free.app/api/schema/swagger-ui/"
+            )
 
 
 def condition_callable(wizard):
@@ -116,7 +71,6 @@ class PersonalInfoWizard(SessionWizardView):
     ]
     template_name = "wizard_view.html"
     condition_dict = {"1": condition_callable}
-    # file_storage = FileSystemStorage(location="/tmp")
 
     def done(self, form_list, **kwargs):
         condition = form_list[0].cleaned_data["condition"]
@@ -230,18 +184,37 @@ class PersonalInfoWizard(SessionWizardView):
                 )
 
 
+@method_decorator(cache_control(private=True), name="dispatch")
+@method_decorator(cache_page(60 * 60 * 2), name="dispatch")
+@method_decorator(vary_on_headers("User-Agent"), name="dispatch")
 class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
     queryset = PersonalInfo.objects.order_by("-id")
     lookup_field = "id"
     serializer_class = PersonalInfo_Serializer
-    pagination_class = LargeResultsSetPagination
+    renderer_classes = [JSONRenderer]
+    parser_classes = [JSONParser]
     authentication_classes = [JWTStatelessUserAuthentication]
     permission_classes = [IsAuthenticated]
+    throttle_classes = [CustomUserRateThrottle]
+    pagination_classes = LargeResultsSetPagination
+    http_method_names = ["post", "delete", "get", "put", "patch", "options"]
+    allowed_methods = ["POST", "GET", "OPTIONS", "PUT", "PATCH", "DELETE"]
+
+    def add_throttle_headers(self, request, response):
+        response["X-RateLimit-Limit"] = request.rate_limit["X-RateLimit-Limit"]
+        response["X-RateLimit-Remaining"] = request.rate_limit["X-RateLimit-Remaining"]
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        self.add_throttle_headers(request, response)
+        return response
 
     def perform_update(self, serializer):
-        print(
-            f"self.request___________________{self.request}"
-        )  # this is not django request, instead a django rest framework request: both are different
+        # this is not django request, instead a django rest framework request: both are different
+        # print(f"self.request : {self.request}")
+
+        # Doing commit = False for serializer to get model instance
+        # ==> model_instance = form.save(commit=False)
         instance = serializer.instance
         user_id = None
         id = None
@@ -256,12 +229,15 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
         if instance:
             id = instance.id
 
-        print(f"user_id : {user_id} and id : {id}")
+        # print(f"user_id : {user_id} and id in self.perfom update------------: {id}")
 
         try:
             with transaction.atomic():
-                # raise Exception("Simulated server crash")
-                super().perform_update(serializer)
+                try:
+                    response = super().perform_update(serializer)
+                except Exception as e:
+                    raise Exception({"detail super()": str(e)})
+
                 if user_id:
                     transaction.on_commit(
                         lambda: (
@@ -271,6 +247,7 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
                                 exception=None,
                                 user_id=user_id,
                                 id=id,
+                                request=self.request,
                             )
                         )
                     )
@@ -283,17 +260,20 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
                                 id=id,
                                 exception=None,
                                 user_id=None,
+                                request=self.request,
                             )
                         )
                     )
         except Exception as e:
-            return self.send_notification(
+            self.send_notification(
                 event="cv_update_fail",
                 exception=str(e),
                 status_="FAILED",
                 user_id=user_id if user_id else None,
                 id=id,
+                request=self.request,
             )
+            raise Exception(e)
 
     def destroy(self, request, *args, **kwargs):
         personal_info_id = kwargs["id"]
@@ -310,23 +290,24 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
                     # Do not use HTTP_204_NO_CONTENT, it is not equivalent to HTTP 204 DELETE
                     # HTTP_204_NO_CONTENT  => Means Content / PersonalInfo Object Not Found
 
-                    return Response(
+                    response = Response(
                         {"success": "CV deleted successfully"},
-                        status=status.HTTP_200_OK,
+                        status=status.HTTP_204_NO_CONTENT,
                     )
 
             except Exception as e:
-                return Response(
+                response = Response(
                     {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         else:
-
-            return Response(
+            response = Response(
                 {"error": "Personal Info does not exist"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-    @action(detail=False, methods=["GET"])
+        self.add_throttle_headers(request, response)
+        return response
+
     def get_personal_info_for_user(self, request, *args, **kwargs):
         user_id = request.query_params.get("user_id")
         personal_info_id = request.query_params.get("personal_info_id")
@@ -343,57 +324,114 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
                 filter_kwargs = {
                     "user_id": user_id,
                 }
-
             serializer = self.get_serializer(queryset, many=True)
-            return Response(serializer.data)
-        except Exception as e:
-            return JsonResponse({"error": str(e)})
+            response = Response(serializer.data)
 
-    @action(detail=False, methods=["PATCH", "PUT"])
+        except Exception as e:
+            response = JsonResponse({"error": str(e)})
+
+        self.add_throttle_headers(request, response)
+        return response
+
     def patch_personal_info_for_user(self, request, *args, **kwargs):
         user_id = request.query_params.get("user_id")
         id = request.query_params.get("id")
-        print(f"user_id : {user_id} and id : {id}")
+
+        # print(f"user id------ : {user_id} : id-----: {id}")
+
+        # check for user id is not none and id is not empty
+        if user_id is not None and id is not None:
+            # Check if partial is available as **kwargs
+            if "partial" in kwargs:
+                partial = True if kwargs.pop("partial").lower() == "true" else False
+
+            elif "partial" in request.query_params:
+                # Check if partial is available as query parameter
+                partial = (
+                    True
+                    if request.query_params.get("partial").lower() == "true"
+                    else False
+                )
+            else:
+                response = Response(
+                    {"error": " 'partial' is not provided"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+                self.add_throttle_headers(request, response)
+                return response
+        else:
+            response = Response(
+                {"error": "'user_id' or 'id' is not provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+            self.add_throttle_headers(request, response)
+            return response
+
+        # print(f"partial-------------- : {partial}")
+        instance = PersonalInfo.objects.filter(user_id__id=user_id, id=id).first()
+        # print(f"instance-------: {instance}")
+
+        if not instance:
+            response = Response(
+                {"error": "Personal Info does not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+            self.add_throttle_headers(request, response)
+            return response
+
+        if user_id not in request.data:
+            request.data["user_id"] = user_id
+        # want to pass/access variables / keys / query parameters from ModelSets method to/within
+        # crete(), update() method of Serializer class, then pass these in context dictionary
+
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial,
+            context={"user_id": user_id, "id": id},
+        )
+
+        serializer.is_valid(raise_exception=True)
+        print(f"serializer_data.validated_data : {serializer.validated_data}")
 
         try:
-            if user_id:
-                partial = kwargs.pop("partial", False)
-                instance = PersonalInfo.objects.filter(user_id__id=user_id, id=id)
+            self.perform_update(serializer)
+            response = Response(
+                data={
+                    "id": int(id),
+                    "user_id": int(user_id),
+                    "event": "cv_updated",
+                    "status": "UPDATED",
+                    "exception": "None",
+                },
+                status=status.HTTP_200_OK,
+            )
 
-                if instance:
-                    data = request.data
-                    if user_id not in data:
-                        data["user_id"] = user_id
-                    # want to pass/access variables / keys / query parameters from ModelSets method to/within
-                    # crete(), ppdate() method of Serializer class, then pass these in context dictionary
-
-                    serializer = self.get_serializer(
-                        instance[0],
-                        data=data,
-                        partial=partial,
-                        context={"user_id": user_id, "id": id},
-                    )
-
-                    serializer.is_valid(raise_exception=True)
-                    self.perform_update(serializer)
-                    print(
-                        f"serializer_data_in_patch_personal_info________________{serializer.data}"
-                    )
-                    return Response(serializer.data)
-                else:
-                    return Response({"error": "Personal Info does not exist"})
-            else:
-                return Response({"error": "user_id not provided"})
         except Exception as e:
-            return Response(str(e))
+            response = Response(
+                {"exception in self.perfom_update()----------------": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        self.add_throttle_headers(request, response)
+        return response
 
     def send_notification(self, event, **kwargs):
+        request = kwargs.get("request", None)
+
         if not settings.DEBUG:
-            WEBHOOK_URL = "https://osama11111.pythonanywhere.com/"
+            WEBHOOK_URL = "https://osama11111.pythonanywhere.com/cv-webhook/"
         else:
             WEBHOOK_URL = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"
-        webhook_url = WEBHOOK_URL
-        headers = {"Content-Type": "application/json"}
+
+        # Convert header values to strings
+        headers = {
+            "Content-Type": "application/json",
+            "X-RateLimit-Limit": str(request.rate_limit["X-RateLimit-Limit"]),
+            "X-RateLimit-Remaining": str(request.rate_limit["X-RateLimit-Remaining"]),
+        }
+        # print(f"event named in send_webhook: ------------: {event}")
+        # print(f"headers in send_webhook: ------------: {headers}")
 
         if event in ["cv_updated", "cv_update_fail"]:
             user_id = kwargs.get("user_id", None)
@@ -410,26 +448,36 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
             data = json.dumps(data)
 
         try:
-            response = requests.post(webhook_url, headers=headers, data=data)
+            response = requests.post(WEBHOOK_URL, headers=headers, data=data)
             response.raise_for_status()
-            print(
-                f"response status: {response.json()} and status code: {response.status_code}"
-            )
-            print("Webhook sent successfully")
-            return JsonResponse(
-                {
-                    "success": "Webhook sent successfully, and status updated on client-side"
-                },
-                status=200,
-            )
+
         except requests.RequestException as e:
             print(f"Failed to send webhook: {str(e)}")
-            return JsonResponse(
-                {
-                    "message": "Failed to send webhook, but request has been processed on server side"
-                },
-                status=500,
-            )
+            pass
+
+    def list(self, request, *args, **kwargs):
+        response = Response(
+            {"detail": 'Method "GET" not allowed.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+        response["Content-Type"] = "application/json"
+        return response
+
+    def update(self, request, *args, **kwargs):
+        response = Response(
+            {"detail": 'Method "PUT" not allowed.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+        response["Content-Type"] = "application/json"
+        return response
+
+    def partial_update(self, request, *args, **kwargs):
+        response = Response(
+            {"detail": 'Method "PATCH" not allowed.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+        response["Content-Type"] = "application/json"
+        return response
 
 
 # from django.core.files.storage import FileSystemStorage
@@ -449,51 +497,16 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
 #         return HttpResponseRedirect("/page-to-redirect-to-when-done/")
 
 
-# from django.views import View
+# def list(self, request, *args, **kwargs):
+#     response = Response(
+#         {"detail": "Method Not Allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED
+#     )
+#     self.add_throttle_headers(request, response)
+#     return response
 
-
-# class PersonalInfoView(View):
-
-#     def get(self, request, **kwargs):
-#         form = PersonalInfoForm()
-#         return render(self.request, "form_form.html", {"form": form})
-
-#     def post(self, request, **kwargs):
-#         if request.method == "POST":
-#             print(request.POST.dict())
-#             form = PersonalInfoForm(request.POST)
-#             if form.is_valid():
-#                 print(f"************{form.cleaned_data}")
-#                 del form.cleaned_data["condition"]
-#                 print(form.cleaned_data)
-#                 commit_form = form.save(commit=False)
-#                 print(f"___________{commit_form}")
-#                 commit_form.save()
-#         return HttpResponseRedirect("/page-to-redirect-to-when-done/")
-
-
-# from django.http import JsonResponse
-# from django.views.decorators.csrf import csrf_exempt
-# from .models import Projects
-# from .serializers import ProjectsSerializer
-
-
-# @csrf_exempt
-# def project_create(request):
-#     if request.method == "POST":
-#         # Deserialize the JSON data sent in the request
-#         data = request.POST.dict()
-#         serializer = ProjectsSerializer(data=data)
-
-#         # Check if the data is valid
-#         if serializer.is_valid():
-#             # Save the validated data
-#             serializer.save()
-#             # Return a success response with the saved data
-#             return JsonResponse(serializer.data, status=201)
-#         else:
-#             # Return an error response with the validation errors
-#             return JsonResponse(serializer.errors, status=400)
-#     else:
-#         # Return a method not allowed response for requests other than POST
-#         return JsonResponse({"error": "Method not allowed"}, status=405)
+# def retrieve(self, request, *args, **kwargs):
+#     response = Response(
+#         {"detail": "Method Not Allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED
+#     )
+#     self.add_throttle_headers(request, response)
+#     return response

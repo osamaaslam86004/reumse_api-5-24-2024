@@ -13,6 +13,11 @@ class TemporaryStorage:
 
 @receiver(post_save, sender=PersonalInfo)
 def create_profile(sender, instance, **kwargs):
+    # Assuming the instance has a serializer set with the is_create attribute
+    serializer = kwargs.get("serializer", None)
+    if not serializer or not getattr(serializer, "is_create", False):
+        return  # Exit the signal if not a create operation
+
     if instance:
         data = {
             "id": instance.id,
@@ -40,20 +45,6 @@ def create_profile(sender, instance, **kwargs):
             )
         except requests.exceptions.RequestException as e:
             print("Failed to send webhook:", e)
-
-
-# Question:
-# How to create a pre_delete signal that collect these attributes 'cv_id': instance.id,  'user_id': instance.user_id.id,]
-# # and pass on these attibutes values to post_delete signal mentioned in the previous prompt
-
-# Answar:
-# To achieve this, you can store the necessary attributes in a temporary location (e.g., a cache or a class-level variable) in the pre_delete signal and then access these stored attributes in the post_delete signal.
-
-# Here’s how you can implement this:
-
-# Define a class-level dictionary to store the attributes.
-# Use pre_delete to capture and store the attributes.
-# Use post_delete to send the webhook using the stored attributes.
 
 
 @receiver(pre_delete, sender=PersonalInfo)
