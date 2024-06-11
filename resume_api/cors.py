@@ -10,20 +10,23 @@ class CustomCorsMiddleware:
         self.get_response = get_response
         self.allowed_origins = getattr(settings, "CORS_ALLOWED_ORIGINS", [])
         self.trusted_csrf_origins = getattr(settings, "CSRF_TRUSTED_ORIGINS", [])
-        self.allowed_hosts = getattr(settings, "ALLOWED_HOSTS", [])
-        # self.host_url = "osamaaslam.pythonanywhere.com"
+        self.host_url = "osamaaslam.pythonanywhere.com"
 
     def __call__(self, request):
         origin = request.headers.get("Origin")
-        logger.info(f"Request Origin: {origin}")
+        # logger.info(f"Request Origin: {origin}")
+        print(f"Request Origin: {origin}")
+
         host = request.headers.get("Host")
-        logger.info(f"Request Host: {host}")
+        # logger.info(f"Request Host: {host}")
+        print(f"Request Host: {host}")
 
         # Combine both allowed origins and CSRF trusted origins
         combined_origins = (
             self.allowed_origins + self.trusted_csrf_origins
         )  # this will allow CORS to submit forms using CSRF token validation
-        logger.info(f"Combined Origins: {combined_origins}")
+        # logger.info(f"Combined Origins: {combined_origins}")
+        print(f"Combined Origins: {combined_origins}")
 
         response = self.process_request_before_process_view(
             request, combined_origins, host
@@ -42,7 +45,7 @@ class CustomCorsMiddleware:
         origin = request.headers.get("Origin")
         if origin in combined_origins:
             return None
-        elif host in self.allowed_hosts:
+        elif host == self.host_url:
             return None
         else:
             return JsonResponse({"detail": "Origin not allowed"}, status=403)

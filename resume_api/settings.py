@@ -54,7 +54,6 @@ if DEBUG:
 else:
     ALLOWED_HOSTS = ["osamaaslam.pythonanywhere.com"]
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -186,7 +185,6 @@ MEDIA_URL = "/media/"
 ##################################---------- CORS settings---------------##################################
 CORS_ALLOWED_ORIGINS = [
     "https://osama11111.pythonanywhere.com",
-    "https://vercel-3-5-2024.vercel.app",
     "https://web.postman.co",
     "https://diverse-intense-whippet.ngrok-free.app",
 ]
@@ -223,7 +221,6 @@ else:
     CSRF_TRUSTED_ORIGINS = [
         "https://osamaaslam.pythonanywhere.com",
         "https://osama11111.pythonanywhere.com",
-        "https://vercel-3-5-2024.vercel.app",
         "https://web.postman.co",
     ]
 
