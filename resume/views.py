@@ -43,7 +43,7 @@ class Homepage(View):
     def get(self, request, **kwargs):
         if not settings.DEBUG:
             return HttpResponseRedirect(
-                "https://osamaaslam.pythonanywhere.com/api/schema/redoc/"
+                "https://osamaaslam.pythonanywhere.com/api/schema/swagger-ui/"
             )
         else:
             return HttpResponseRedirect(
