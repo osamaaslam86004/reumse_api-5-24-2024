@@ -132,8 +132,8 @@ class PersonalInfoWizard(SessionWizardView):
 
         else:
             PersonalInfo = form_list[0]
+            del PersonalInfo.cleaned_data["condition"]
             PersonalInfo.save(commit=False)
-            del PersonalInfo["condition"]
 
             publication_data = form_list[2]
             over_view = form_list[3]
