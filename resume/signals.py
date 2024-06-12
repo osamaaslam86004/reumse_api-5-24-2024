@@ -5,6 +5,10 @@ import json
 import requests
 from django.db.models.signals import pre_delete, post_delete
 from django.conf import settings
+import logging
+from requests.adapters import HTTPAdapter, Retry
+
+logger = logging.getLogger(__name__)
 
 
 class TemporaryStorage:
@@ -18,6 +22,8 @@ def create_profile(sender, instance, **kwargs):
     if not serializer or not getattr(serializer, "is_create", False):
         return  # Exit the signal if not a create operation
 
+    logger.error(f"serializer in signal: {serializer}")
+
     if instance:
         data = {
             "id": instance.id,
@@ -28,23 +34,33 @@ def create_profile(sender, instance, **kwargs):
         }
 
         data = json.dumps(data)
+        logger.error(f"data in signal: {data}")
 
-        if not settings.DEBUG:
+        if settings.DEBUG:
             webhook_url = "https://osama11111.pythonanywhere.com/cv-webhook/"
         else:
             webhook_url = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"
 
         headers = {"Content-Type": "application/json"}
 
+        session = requests.Session()
+        retries = Retry(
+            total=3, backoff_factor=0.1, status_forcelist=[504, 500, 502, 503]
+        )
+        session.mount("https://", HTTPAdapter(max_retries=retries))
+
         try:
-            response = requests.post(webhook_url, headers=headers, data=data)
-            response.raise_for_status()  # Raise an exception for any HTTP error status
-            print("Webhook sent successfully")
-            print(
-                f"response status-----: {response.json()} and status code---- : {response.status_code}"
+            response = requests.post(
+                webhook_url, headers=headers, data=data, verify=False
             )
+            response.raise_for_status()  # Raise an exception for any HTTP error status
+            logger.info(
+                f"Webhook sent successfully: {response.json()} and status code: {response.status_code}"
+            )
+
         except requests.exceptions.RequestException as e:
             print("Failed to send webhook:", e)
+            logger.error(f"Failed to send webhook: {e}")
 
 
 @receiver(pre_delete, sender=PersonalInfo)
@@ -59,7 +75,7 @@ def store_cv_attributes(sender, instance, **kwargs):
 def send_webhook_on_cv_delete(sender, instance, **kwargs):
     attributes = TemporaryStorage.storage.pop(instance.id, None)
 
-    if not settings.DEBUG:
+    if settings.DEBUG:
         webhook_url = "https://osama11111.pythonanywhere.com/cv-webhook/"
     else:
         webhook_url = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"
@@ -68,18 +84,22 @@ def send_webhook_on_cv_delete(sender, instance, **kwargs):
         "event": "cv_deleted",
         "id": attributes["cv_id"],
         "user_id": attributes["user_id"],
-        # 'deleted_at': instance.deleted_at.isoformat()
     }
+    logger.error(f"Data to send webhook: {data}")
 
     data = json.dumps(data)
     headers = {"Content-Type": "application/json"}
 
+    session = requests.Session()
+    retries = Retry(total=3, backoff_factor=0.1, status_forcelist=[504, 500, 502, 503])
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+
     try:
-        response = requests.post(webhook_url, headers=headers, data=data)
+        response = requests.post(webhook_url, headers=headers, data=data, verify=False)
         response.raise_for_status()
-        print(
-            f"client response status for handling webhook: {response.raise_for_status()}"
+        logger.info(
+            f"Webhook sent successfully: {response.json()} and status code: {response.status_code}"
         )
     except requests.RequestException as e:
-        # Handle the exception (log it, notify someone, etc.)
         print(f"Failed to send webhook: {e}")
+        logger.error(f"Failed to send webhook: {e}")

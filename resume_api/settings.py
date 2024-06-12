@@ -28,31 +28,13 @@ SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
-# Close any open connections to vercel db or print the session details
-if DEBUG:
-    try:
-        import psycopg2
-
-        conn = psycopg2.connect(
-            "postgres://default:A9dGRnxcCk2b@ep-bold-scene-a4j046n4.us-east-1.aws.neon.tech:5432/verceldb?sslmode=require"
-        )
-        conn.close()
-    except:
-        from django.contrib.sessions.models import Session
-        from django.utils import timezone
-
-        active_sessions = Session.objects.filter(expire_date__gt=timezone.now())
-        for session in active_sessions:
-            session_key = session.session_key
-            session_data = session.get_decoded()
-            user_id = session_data.get("_auth_user_id", "Anonymous")
-            print(f"Session Key: {session_key}, User ID: {user_id}")
 
 
 if DEBUG:
     ALLOWED_HOSTS = ["127.0.0.1", "localhost", "diverse-intense-whippet.ngrok-free.app"]
 else:
     ALLOWED_HOSTS = ["osamaaslam.pythonanywhere.com"]
+
 
 # Application definition
 
@@ -185,6 +167,7 @@ MEDIA_URL = "/media/"
 ##################################---------- CORS settings---------------##################################
 CORS_ALLOWED_ORIGINS = [
     "https://osama11111.pythonanywhere.com",
+    "https://osamaaslam.pythonanywhere.com",
     "https://web.postman.co",
     "https://diverse-intense-whippet.ngrok-free.app",
 ]
@@ -215,6 +198,8 @@ if DEBUG:
         "http://127.0.0.1",
         "http://localhost",
         "https://diverse-intense-whippet.ngrok-free.app",
+        "https://osamaaslam.pythonanywhere.com",
+        "https://osama11111.pythonanywhere.com",
     ]
 else:
     # authenticate teh request only, checking if it has CSRF token comming here from django-e-commrace
@@ -222,6 +207,7 @@ else:
         "https://osamaaslam.pythonanywhere.com",
         "https://osama11111.pythonanywhere.com",
         "https://web.postman.co",
+        "https://diverse-intense-whippet.ngrok-free.app",
     ]
 
 

@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 import logging
 
 logger = logging.getLogger(__name__)
@@ -10,23 +10,23 @@ class CustomCorsMiddleware:
         self.get_response = get_response
         self.allowed_origins = getattr(settings, "CORS_ALLOWED_ORIGINS", [])
         self.trusted_csrf_origins = getattr(settings, "CSRF_TRUSTED_ORIGINS", [])
-        self.host_url = "osamaaslam.pythonanywhere.com"
+        self.host_url = [
+            "osamaaslam.pythonanywhere.com",
+            "diverse-intense-whippet.ngrok-free.app",
+        ]
 
     def __call__(self, request):
         origin = request.headers.get("Origin")
-        # logger.info(f"Request Origin: {origin}")
-        print(f"Request Origin: {origin}")
+        logger.info(f"Request Origin: {origin}")
 
         host = request.headers.get("Host")
-        # logger.info(f"Request Host: {host}")
-        print(f"Request Host: {host}")
+        logger.info(f"Request Host: {host}")
 
         # Combine both allowed origins and CSRF trusted origins
         combined_origins = (
             self.allowed_origins + self.trusted_csrf_origins
         )  # this will allow CORS to submit forms using CSRF token validation
-        # logger.info(f"Combined Origins: {combined_origins}")
-        print(f"Combined Origins: {combined_origins}")
+        logger.info(f"Combined Origins: {combined_origins}")
 
         response = self.process_request_before_process_view(
             request, combined_origins, host
@@ -45,14 +45,14 @@ class CustomCorsMiddleware:
         origin = request.headers.get("Origin")
         if origin in combined_origins:
             return None
-        elif host == self.host_url:
+        elif host in self.host_url:
             return None
         else:
             return JsonResponse({"detail": "Origin not allowed"}, status=403)
 
     def process_response(self, request, response):
         # for header in response.headers:
-        #     print(
+        #     logger.info(
         #         f"header name in middleware: {header}-------------------- : {response.headers[header]}"
         #     )
 
@@ -69,12 +69,12 @@ class CustomCorsMiddleware:
             response["Access-Control-Allow-Methods"] = response.headers["Allow"]
 
         # Remove "Cookie" from SessionMiddleWare
-        vary_headers = response.headers.get("Vary", "").split(", ")
-        if "Cookie" in vary_headers:
-            vary_headers.remove("Cookie")
-        response.headers["Vary"] = ", ".join(vary_headers)
+        # vary_headers = response.headers.get("Vary", "").split(", ")
+        # if "Cookie" in vary_headers:
+        #     vary_headers.remove("Cookie")
+        # response.headers["Vary"] = ", ".join(vary_headers)
 
-        # response["Access-Control-Allow-Credentials"] = "true"
+        response["Access-Control-Allow-Credentials"] = "true"
         """
         added "Access-Control-Allow-Headers" after updating "Vary", it will automatically updates
         the Vary header value in the Access-Control-Allow-Headers dictionary. This dictioanry 
@@ -83,7 +83,7 @@ class CustomCorsMiddleware:
         response["Access-Control-Allow-Headers"] = response.headers
 
         for header in response.headers:
-            print(
+            logger.info(
                 f"header coming out of API: {header}--------- : {response.headers[header]}"
             )
 

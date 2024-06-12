@@ -1,7 +1,4 @@
-# from django.shortcuts import render
 from rest_framework import viewsets
-
-# from rest_framework.views import APIView
 from api_auth.models import CustomUser
 from api_auth.serializers import UserSerializer, TokenClaimObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -11,18 +8,9 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_headers
 from django.views.decorators.cache import cache_control
-
-# from rest_framework.metadata import SimpleMetadata
-# from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
-# from rest_framework.permissions import IsAuthenticated
-# from api_auth.custom_meta_data_class import CustomMetadata
 import jsonschema
 from jsonschema import ValidationError
 from api_auth.schemas import user_create_request_schema, user_create_response_schema
-
-# from rest_framework.decorators import action
-# import json
-# from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 from resume_api.custom_user_rated_throtle_class import (
@@ -129,17 +117,3 @@ class UserCreateView(viewsets.ModelViewSet):
                     "values": "either email is None or password is None",
                 }
             )
-
-    # def create(self, request, *args, **kwargs):
-    #     if "metadata" in request.data:
-    #         metadata = request.data.get('metadata')
-
-    #     user_data = request.data.get('user_data')
-
-    #     serializer = self.get_serializer(data=user_data)
-    #     serializer.is_valid(raise_exception=True)
-    #     self.perform_create(serializer)
-
-    #     CustomUser.objects.
-
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED)

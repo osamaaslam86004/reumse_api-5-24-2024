@@ -27,8 +27,6 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_headers
 from django.views.decorators.cache import cache_control
-
-# from rest_framework.decorators import action
 from django.db import transaction
 from api_auth.models import CustomUser
 from rest_framework_simplejwt.authentication import JWTStatelessUserAuthentication
@@ -121,7 +119,7 @@ class PersonalInfoWizard(SessionWizardView):
             projects.save()
 
             messages.success(self.request, "CV created successfully!")
-            if settings.DEBUG:
+            if not settings.DEBUG:
                 return HttpResponsePermanentRedirect(
                     "https://diverse-intense-whippet.ngrok-free.app/"
                 )
@@ -173,7 +171,7 @@ class PersonalInfoWizard(SessionWizardView):
             projects.save()
 
             messages.success(self.request, "CV created successfully!")
-            if settings.DEBUG:
+            if not settings.DEBUG:
                 return HttpResponsePermanentRedirect(
                     "https://diverse-intense-whippet.ngrok-free.app/"
                 )
@@ -418,7 +416,7 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
     def send_notification(self, event, **kwargs):
         request = kwargs.get("request", None)
 
-        if not settings.DEBUG:
+        if settings.DEBUG:
             WEBHOOK_URL = "https://osama11111.pythonanywhere.com/cv-webhook/"
         else:
             WEBHOOK_URL = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"
