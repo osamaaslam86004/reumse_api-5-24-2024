@@ -39,7 +39,7 @@ from resume_api.custom_user_rated_throtle_class import CustomUserRateThrottle
 
 class Homepage(View):
     def get(self, request, **kwargs):
-        if not settings.DEBUG:
+        if settings.DEBUG:
             return HttpResponseRedirect(
                 "https://osamaaslam.pythonanywhere.com/api/schema/swagger-ui/"
             )
@@ -119,7 +119,7 @@ class PersonalInfoWizard(SessionWizardView):
             projects.save()
 
             messages.success(self.request, "CV created successfully!")
-            if not settings.DEBUG:
+            if settings.DEBUG:
                 return HttpResponsePermanentRedirect(
                     "https://diverse-intense-whippet.ngrok-free.app/"
                 )
@@ -171,7 +171,7 @@ class PersonalInfoWizard(SessionWizardView):
             projects.save()
 
             messages.success(self.request, "CV created successfully!")
-            if not settings.DEBUG:
+            if settings.DEBUG:
                 return HttpResponsePermanentRedirect(
                     "https://diverse-intense-whippet.ngrok-free.app/"
                 )
@@ -416,7 +416,7 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
     def send_notification(self, event, **kwargs):
         request = kwargs.get("request", None)
 
-        if settings.DEBUG:
+        if not settings.DEBUG:
             WEBHOOK_URL = "https://osama11111.pythonanywhere.com/cv-webhook/"
         else:
             WEBHOOK_URL = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"
@@ -492,18 +492,3 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
 #         print(cleaned_data)
 #         info_instance = PersonalInfo.objects.create(**cleaned_data)
 #         return HttpResponseRedirect("/page-to-redirect-to-when-done/")
-
-
-# def list(self, request, *args, **kwargs):
-#     response = Response(
-#         {"detail": "Method Not Allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED
-#     )
-#     self.add_throttle_headers(request, response)
-#     return response
-
-# def retrieve(self, request, *args, **kwargs):
-#     response = Response(
-#         {"detail": "Method Not Allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED
-#     )
-#     self.add_throttle_headers(request, response)
-#     return response
