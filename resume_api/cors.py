@@ -17,16 +17,16 @@ class CustomCorsMiddleware:
 
     def __call__(self, request):
         origin = request.headers.get("Origin")
-        logger.info(f"Request Origin: {origin}")
+        # logger.info(f"Request Origin: {origin}")
 
         host = request.headers.get("Host")
-        logger.info(f"Request Host: {host}")
+        # logger.info(f"Request Host: {host}")
 
         # Combine both allowed origins and CSRF trusted origins
         combined_origins = (
             self.allowed_origins + self.trusted_csrf_origins
         )  # this will allow CORS to submit forms using CSRF token validation
-        logger.info(f"Combined Origins: {combined_origins}")
+        # logger.info(f"Combined Origins: {combined_origins}")
 
         response = self.process_request_before_process_view(
             request, combined_origins, host

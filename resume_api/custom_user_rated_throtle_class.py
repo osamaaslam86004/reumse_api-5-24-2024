@@ -22,9 +22,9 @@ class CustomAnonRateThrottle(AnonRateThrottle):
         return allowed
 
     def get_rate(self):
-        print(
-            f"anon rate -------------------------: {self.THROTTLE_RATES.get('anon', None)}"
-        )
+        # print(
+        #     f"anon rate -------------------------: {self.THROTTLE_RATES.get('anon', None)}"
+        # )
         return self.THROTTLE_RATES.get("anon", None)
 
 
@@ -49,7 +49,7 @@ class CustomUserRateThrottle(UserRateThrottle):
 
     def get_rate(self):
         # Use the scope to retrieve the appropriate rate from settings
-        print(
-            f"user rate -------------------------: {self.THROTTLE_RATES.get('user', None)}"
-        )
+        # print(
+        #     f"user rate -------------------------: {self.THROTTLE_RATES.get('user', None)}"
+        # )
         return self.THROTTLE_RATES.get(self.scope, None)
