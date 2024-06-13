@@ -39,7 +39,7 @@ from resume_api.custom_user_rated_throtle_class import CustomUserRateThrottle
 
 class Homepage(View):
     def get(self, request, **kwargs):
-        if settings.DEBUG:
+        if not settings.DEBUG:
             return HttpResponseRedirect(
                 "https://osamaaslam.pythonanywhere.com/api/schema/swagger-ui/"
             )

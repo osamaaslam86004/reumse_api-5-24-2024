@@ -82,10 +82,10 @@ class CustomCorsMiddleware:
         """
         response["Access-Control-Allow-Headers"] = response.headers
 
-        for header in response.headers:
-            logger.info(
-                f"header coming out of API: {header}--------- : {response.headers[header]}"
-            )
+        # for header in response.headers:
+        #     logger.info(
+        #         f"header coming out of API: {header}--------- : {response.headers[header]}"
+        #     )
 
         return response
 
