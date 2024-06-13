@@ -31,7 +31,12 @@ DEBUG = False
 
 
 if DEBUG:
-    ALLOWED_HOSTS = ["127.0.0.1", "localhost", "diverse-intense-whippet.ngrok-free.app"]
+    ALLOWED_HOSTS = [
+        "127.0.0.1",
+        "localhost",
+        "diverse-intense-whippet.ngrok-free.app",
+        "osamaaslam.pythonanywhere.com",
+    ]
 else:
     ALLOWED_HOSTS = ["osamaaslam.pythonanywhere.com"]
 
@@ -90,28 +95,28 @@ WSGI_APPLICATION = "resume_api.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-if not DEBUG:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
+# if not DEBUG:
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
+}
 
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": config("POSTGRES_DATABASE"),
-            "USER": config("POSTGRES_USER"),
-            "PASSWORD": config("POSTGRES_PASSWORD"),
-            "HOST": config("POSTGRES_HOST"),
-            "PORT": "5432",
-            "OPTIONS": {
-                "sslmode": "require",
-            },
-        }
-    }
+# else:
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.postgresql",
+#             "NAME": config("POSTGRES_DATABASE"),
+#             "USER": config("POSTGRES_USER"),
+#             "PASSWORD": config("POSTGRES_PASSWORD"),
+#             "HOST": config("POSTGRES_HOST"),
+#             "PORT": "5432",
+#             "OPTIONS": {
+#                 "sslmode": "require",
+#             },
+#         }
+#     }
 
 
 # Cache configuration
@@ -248,32 +253,18 @@ AUTH_USER_MODEL = "api_auth.CustomUser"
 # to handle this error appropriately, usually by prompting the user to log in again or refreshing
 # the token if it has expired.
 
-from django.conf import settings
 
-if settings.DEBUG:
-    REST_FRAMEWORK = {
-        "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-        "DEFAULT_THROTTLE_CLASSES": [
-            "resume_api.custom_user_rated_throtle_class.CustomAnonRateThrottle",
-            "resume_api.custom_user_rated_throtle_class.CustomUserRateThrottle",
-        ],
-        "DEFAULT_THROTTLE_RATES": {
-            "anon": "2/hour",
-            "user": "3/hour",
-        },
-    }
-else:
-    REST_FRAMEWORK = {
-        "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-        "DEFAULT_THROTTLE_CLASSES": [
-            "resume_api.custom_user_rated_throtle_class.CustomAnonRateThrottle",
-            "resume_api.custom_user_rated_throtle_class.CustomUserRateThrottle",
-        ],
-        "DEFAULT_THROTTLE_RATES": {
-            "anon": "200/hour",
-            "user": "200/hour",
-        },
-    }
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "resume_api.custom_user_rated_throtle_class.CustomAnonRateThrottle",
+        "resume_api.custom_user_rated_throtle_class.CustomUserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "200/hour",
+        "user": "200/hour",
+    },
+}
 
 
 SPECTACULAR_SETTINGS = {

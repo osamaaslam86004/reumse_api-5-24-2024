@@ -17,12 +17,6 @@ class TemporaryStorage:
 
 @receiver(post_save, sender=PersonalInfo)
 def create_profile(sender, instance, **kwargs):
-    # Assuming the instance has a serializer set with the is_create attribute
-    serializer = kwargs.get("serializer", None)
-    if not serializer or not getattr(serializer, "is_create", False):
-        return  # Exit the signal if not a create operation
-
-    logger.error(f"serializer in signal: {serializer}")
 
     if instance:
         data = {
