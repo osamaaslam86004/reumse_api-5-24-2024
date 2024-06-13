@@ -18,6 +18,15 @@ class TemporaryStorage:
 @receiver(post_save, sender=PersonalInfo)
 def create_profile(sender, instance, **kwargs):
 
+    _serializer = kwargs.get("serializer", None)
+
+    # Check if the serializer exists and if it's a create operation
+    if _serializer and not getattr(_serializer, "is_create", False):
+        return
+
+    logger.error(f"serializer: {_serializer}---- : is_create : {getattr(_serializer, 'is_create', False)}")
+    print(f"serializer: {_serializer}---- : is_create : {getattr(_serializer, 'is_create', False)}")
+
     if instance:
         data = {
             "id": instance.id,
@@ -30,7 +39,7 @@ def create_profile(sender, instance, **kwargs):
         data = json.dumps(data)
         logger.error(f"data in signal: {data}")
 
-        if not settings.DEBUG:
+        if settings.DEBUG:
             webhook_url = "https://osama11111.pythonanywhere.com/cv-webhook/"
         else:
             webhook_url = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"
@@ -69,7 +78,7 @@ def store_cv_attributes(sender, instance, **kwargs):
 def send_webhook_on_cv_delete(sender, instance, **kwargs):
     attributes = TemporaryStorage.storage.pop(instance.id, None)
 
-    if not settings.DEBUG:
+    if settings.DEBUG:
         webhook_url = "https://osama11111.pythonanywhere.com/cv-webhook/"
     else:
         webhook_url = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"

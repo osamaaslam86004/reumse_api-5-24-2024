@@ -119,7 +119,7 @@ class PersonalInfoWizard(SessionWizardView):
             projects.save()
 
             messages.success(self.request, "CV created successfully!")
-            if settings.DEBUG:
+            if not settings.DEBUG:
                 return HttpResponsePermanentRedirect(
                     "https://diverse-intense-whippet.ngrok-free.app/"
                 )
@@ -171,7 +171,7 @@ class PersonalInfoWizard(SessionWizardView):
             projects.save()
 
             messages.success(self.request, "CV created successfully!")
-            if settings.DEBUG:
+            if not settings.DEBUG:
                 return HttpResponsePermanentRedirect(
                     "https://diverse-intense-whippet.ngrok-free.app/"
                 )
@@ -416,7 +416,7 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
     def send_notification(self, event, **kwargs):
         request = kwargs.get("request", None)
 
-        if not settings.DEBUG:
+        if settings.DEBUG:
             WEBHOOK_URL = "https://osama11111.pythonanywhere.com/cv-webhook/"
         else:
             WEBHOOK_URL = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"

@@ -235,6 +235,8 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
         # self = {context={request, format, view}, data = **kwargs }
         super(PersonalInfo_Serializer, self).__init__(*args, **kwargs)
         self.instance_of_Programming_area = ProgrammingAreaSerializer()
+        # Trigger signal for create method but not for update method of serializer
+        self.is_create = False
 
     def validate_programming_area_model_fields(self, programming_area_data):
         for item in programming_area_data:
@@ -294,7 +296,7 @@ class PersonalInfo_Serializer(serializers.ModelSerializer):
         return personal_info
 
     def update(self, instance, validated_data):
-        self.is_create = False  # Set a flag for update
+        self.is_create = False
 
         try:
             # # instance here is the instance of PersonalInfo model
