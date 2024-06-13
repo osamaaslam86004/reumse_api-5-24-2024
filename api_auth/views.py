@@ -18,6 +18,9 @@ from resume_api.custom_user_rated_throtle_class import (
     CustomAnonRateThrottle,
 )
 
+##############################################
+############################################
+
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = TokenClaimObtainPairSerializer
