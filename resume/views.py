@@ -39,13 +39,13 @@ from resume_api.custom_user_rated_throtle_class import CustomUserRateThrottle
 
 class Homepage(View):
     def get(self, request, **kwargs):
-        if not settings.DEBUG:
+        if settings.DEBUG:
             return HttpResponseRedirect(
-                "https://osamaaslam.pythonanywhere.com/api/schema/swagger-ui/"
+                "https://diverse-intense-whippet.ngrok-free.app/api/schema/swagger-ui/"
             )
         else:
             return HttpResponseRedirect(
-                "https://diverse-intense-whippet.ngrok-free.app/api/schema/swagger-ui/"
+                "https://osamaaslam.pythonanywhere.com/api/schema/swagger-ui/"
             )
 
 
@@ -275,7 +275,18 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         personal_info_id = kwargs["id"]
         personal_info = PersonalInfo.objects.filter(id=personal_info_id)
-        print(f"personal_info_id__________delete___{personal_info}")
+
+        print(
+            f"personal_info_id_delete---- : {personal_info}: request.user.id--- : {request.user.id}"
+        )
+
+        data = {
+            "id": personal_info_id,
+            "user_id": request.user.id,
+            "event": "cv_deleted",
+            "status": "DELETED",
+            "exception": "None",
+        }
 
         if personal_info:
 
@@ -288,17 +299,18 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
                     # HTTP_204_NO_CONTENT  => Means Content / PersonalInfo Object Not Found
 
                     response = Response(
-                        {"success": "CV deleted successfully"},
-                        status=status.HTTP_204_NO_CONTENT,
+                        {"data": data}, status=status.HTTP_204_NO_CONTENT
                     )
 
             except Exception as e:
+                data["status"] = "FAILED"
+                data["exception"] = str(e)
                 response = Response(
-                    {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    {"data": data}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         else:
             response = Response(
-                {"error": "Personal Info does not exist"},
+                {"detail": "Personal Info does not exist"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -417,9 +429,9 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
         request = kwargs.get("request", None)
 
         if settings.DEBUG:
-            WEBHOOK_URL = "https://osama11111.pythonanywhere.com/cv-webhook/"
-        else:
             WEBHOOK_URL = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"
+        else:
+            WEBHOOK_URL = "https://osama11111.pythonanywhere.com/cv-webhook/"
 
         # Convert header values to strings
         headers = {
