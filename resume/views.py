@@ -1,3 +1,4 @@
+import logging
 from resume.models import PersonalInfo
 from resume.forms import (
     PersonalInfoForm,
@@ -35,6 +36,10 @@ from django.views import View
 from django.contrib import messages
 from django.conf import settings
 from resume_api.custom_user_rated_throtle_class import CustomUserRateThrottle
+from resume.validate_schema import ValidateJson
+
+
+logger = logging.getLogger(__name__)
 
 
 class Homepage(View):
@@ -184,7 +189,7 @@ class PersonalInfoWizard(SessionWizardView):
 @method_decorator(cache_control(private=True), name="dispatch")
 @method_decorator(cache_page(60 * 60 * 2), name="dispatch")
 @method_decorator(vary_on_headers("User-Agent"), name="dispatch")
-class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
+class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
     queryset = PersonalInfo.objects.order_by("-id")
     lookup_field = "id"
     serializer_class = PersonalInfo_Serializer
@@ -202,6 +207,13 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
         response["X-RateLimit-Remaining"] = request.rate_limit["X-RateLimit-Remaining"]
 
     def create(self, request, *args, **kwargs):
+
+        # Validate request data
+        try:
+            self.validate_json(request.data)
+        except Exception as e:
+            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+
         response = super().create(request, *args, **kwargs)
         self.add_throttle_headers(request, response)
         return response
@@ -321,14 +333,35 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
         user_id = request.query_params.get("user_id")
         personal_info_id = request.query_params.get("personal_info_id")
 
+        logger.debug(
+            f"Received user_id: {user_id}, personal_info_id: {personal_info_id}"
+        )
+
+        # check if "user_id" and "personal_info_id" are not none
+        if (
+            "user_id" not in request.query_params
+            and user_id is not None
+            and "personal_info_id" not in request.query_params
+            and personal_info_id is not None
+        ):
+            response = Response(
+                {
+                    "detail": "query parameters : 'user_id' or 'personal_info_id' is required"
+                }
+            )
+            self.add_throttle_headers(request, response)
+            return response
+
         filter_kwargs = {}
         try:
-            if personal_info_id:
+            # Retrieve a particular instance only
+            if personal_info_id and user_id:
                 queryset = self.get_queryset().filter(
                     id=personal_info_id, user_id=user_id
                 )
                 filter_kwargs = {"user_id": user_id, "id": personal_info_id}
             else:
+                # return list of personalinfo instances for user
                 queryset = self.get_queryset().filter(user_id=user_id)
                 filter_kwargs = {
                     "user_id": user_id,
@@ -337,7 +370,7 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
             response = Response(serializer.data)
 
         except Exception as e:
-            response = JsonResponse({"error": str(e)})
+            response = JsonResponse({"detail": str(e)})
 
         self.add_throttle_headers(request, response)
         return response

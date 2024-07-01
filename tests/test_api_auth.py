@@ -1,4 +1,8 @@
 import pytest
+import logging
+import jsonschema
+
+# from django.core.exceptions import ValidationError
 
 # import jwt
 import json
@@ -20,6 +24,9 @@ from api_auth.models import CustomUser
 
 # Fixtures:
 # Use pytest fixtures for setting up common test data, reducing redundancy and improving test readability.
+
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
@@ -493,6 +500,71 @@ class Test_UserCreateView_test_post_method_for_crud_user:
             and "is_staff" in actual_response
             and len(actual_response) == 5
         )
+
+
+@pytest.mark.django_db
+class Test_Schema_Error_UserCreateView:
+    """
+    test if schema of json in request is valid
+    """
+
+    def test_json_schema_error(self, build_user):
+        # Create an API client
+        client = APIClient()
+
+        # build user data using the factory
+        user = build_user()
+
+        # Prepare the data dictionary, accoring to jsonschema
+        data = {"email": user.email, "username": user.username}
+
+        # Send a POST request to the endpoint
+        headers = {"Origin": "https://web.postman.co", "Accept": "application/json"}
+
+        response = client.post(
+            reverse("crud-user-list"), data=data, headers=headers, format="json"
+        )
+        print(f"response data : {response.data}")
+
+        # Assert the response status code
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        # Getting the actual JSON response received from an API call
+        assert "password" in response.data
+        assert isinstance(response.data["password"], list)
+
+
+@pytest.mark.django_db
+class Test_Schema_Validation_UserCreateView:
+    """
+    test if schema of json in request is valid
+    """
+
+    def test_json_schema_validation(self, build_user):
+        # Create an API client
+        client = APIClient()
+
+        # build user data using the factory
+        user = build_user()
+
+        # Prepare the data dictionary, accoring to jsonschema
+        data = {"email": user.email, "username": user.username, "password": True}
+
+        # Send a POST request to the endpoint
+        headers = {"Origin": "https://web.postman.co", "Accept": "application/json"}
+
+        response = client.post(
+            reverse("crud-user-list"), data=data, headers=headers, format="json"
+        )
+        print(f"response data : {response.data}")
+
+        # Assert the response status code
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        # Getting the actual JSON response received from an API call
+        # Assert the presence of "password" key in response data
+        assert "password" in response.data
+        assert isinstance(response.data["password"], list)
 
 
 @pytest.mark.django_db
