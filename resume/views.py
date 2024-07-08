@@ -379,8 +379,6 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
         user_id = request.query_params.get("user_id")
         id = request.query_params.get("id")
 
-        # print(f"user id------ : {user_id} : id-----: {id}")
-
         # check for user id is not none and id is not empty
         if user_id is not None and id is not None:
             # Check if partial is available as **kwargs
@@ -409,9 +407,7 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
             self.add_throttle_headers(request, response)
             return response
 
-        # print(f"partial-------------- : {partial}")
         instance = PersonalInfo.objects.filter(user_id__id=user_id, id=id).first()
-        # print(f"instance-------: {instance}")
 
         if not instance:
             response = Response(
