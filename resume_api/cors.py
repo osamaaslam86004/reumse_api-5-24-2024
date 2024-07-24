@@ -24,9 +24,7 @@ class CustomCorsMiddleware:
         logger.info(f"Request Host: {host}")
 
         # Combine both allowed origins and CSRF trusted origins
-        combined_origins = (
-            self.allowed_origins + self.trusted_csrf_origins
-        )
+        combined_origins = self.allowed_origins + self.trusted_csrf_origins
         logger.info(f"Combined Origins: {combined_origins}")
 
         response = self.process_request_before_process_view(
@@ -39,16 +37,17 @@ class CustomCorsMiddleware:
             response = self.process_response(request, response)
             return response
 
-    def process_request_before_process_view(self, request, combined_origins, host, origin):
+    def process_request_before_process_view(
+        self, request, combined_origins, host, origin
+    ):
         """
         process the request before self.process_view() is called
         """
 
         if origin is None and host in self.host_url:
-             logger.info(f"Server--------------{request.headers.get('Server', '').lower() }")
-             return None
-             if request.headers.get('Server', '') != "PythonAnywhere":
-                 return JsonResponse({"detail": "Origin not allowed"}, status=403)
+            logger.info(f"Server------{request.headers.get('Server', '').lower() }")
+            if request.headers.get("Server", "") != "PythonAnywhere":
+                return JsonResponse({"detail": "Origin not allowed"}, status=403)
 
         elif origin in combined_origins:
             return None

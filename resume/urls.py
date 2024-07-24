@@ -20,7 +20,7 @@ router.register(
 urlpatterns = [
     path(
         "get-personal-info-data-for-user/",
-        PersonalInfo_List_CreateView.as_view({'get' : 'get-personal-info-data-for-user'}),
+        PersonalInfo_List_CreateView.as_view({"get": "get_personal_info_for_user"}),
         name="get_personal_info_for_user",
     ),
     path(
