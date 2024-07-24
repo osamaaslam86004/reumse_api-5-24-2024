@@ -13,6 +13,7 @@ class CustomCorsMiddleware:
         self.host_url = [
             "osamaaslam.pythonanywhere.com",
             "diverse-intense-whippet.ngrok-free.app",
+            "e.com",
         ]
         logger.info(f"Host URL: {self.host_url}")
 
@@ -45,17 +46,27 @@ class CustomCorsMiddleware:
         """
 
         if origin is None and host in self.host_url:
-            logger.info(f"Server------{request.headers.get('Server', '').lower() }")
-            if request.headers.get("Server", "") != "PythonAnywhere":
+            logger.info(
+                f"Server--------------{request.headers.get('Server', '').lower() }"
+            )
+            if (
+                request.headers.get("Server")
+                and request.headers.get("Server") != "PythonAnywhere"
+            ):
                 return JsonResponse({"detail": "Origin not allowed"}, status=403)
-
-        elif origin in combined_origins:
             return None
-        else:
-            if host in self.host_url:
+
+        if origin in combined_origins and host in self.host_url:
+            return None
+
+        if origin in combined_origins or host in self.host_url:
+            if (
+                request.headers.get("Referer")
+                == "https://osamaaslam.pythonanywhere.com/api/schema/swagger-ui/"
+            ):
                 return None
-            else:
-                return JsonResponse({"detail": "Origin not allowed"}, status=403)
+
+        return JsonResponse({"detail": "Origin not allowed"}, status=403)
 
     def process_response(self, request, response):
 
