@@ -42,17 +42,6 @@ class UserFactory(factory.django.DjangoModelFactory):
     password = factory.PostGenerationMethodCall("set_password", "testpass123")
 
 
-class UserFactory_Seializer_Testing(factory.django.DjangoModelFactory):
-    class Meta:
-        model = CustomUser
-
-    username = factory.Faker("user_name")
-    email = factory.Faker("email")
-    password = factory.PostGenerationMethodCall("set_password", "testpass123")
-    is_staff = factory.Faker("boolean", chance_of_getting_true=100)
-    is_active = factory.Faker("boolean", chance_of_getting_true=100)
-
-
 class PersonalInfoFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = PersonalInfo

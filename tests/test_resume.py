@@ -74,6 +74,7 @@ def build_user():
     """
     build user credentials randomly
     """
+
     def _build_user(**kwargs):
         return UserFactory.build(**kwargs)
 
@@ -775,77 +776,6 @@ class Test_PersonalInfo_For_Retrieve_Action:
         # else:
 
         assert response.json() is not [] or response.json() is not {}
-
-
-
-@pytest.mark.django_db
-class Test_Schema_Error_PersonalInfo_create_action:
-    """
-    test if schema of json in request is valid
-    """
-
-    def test_json_schema_error(self, create_access_token_for_user ,personal_info_data):
-        # Create an API client
-        client = APIClient()
-
-        # create user and tokens
-        tokens, user = create_access_token_for_user()
-
-        # build invalid data {with missing 'user_id' key} using the factory
-        json_data, instance, user = personal_info_data(user)
-       # Send a POST request to the endpoint
-        headers = {"Origin": "https://web.postman.co", "Accept": "application/json", 
-                   "Authorization" : f"Bearer {tokens["access"]}"}
-
-        response = client.post(
-            reverse("get-personal-info-data-list"), data=json_data, headers=headers, format="json"
-        )
-        print(f"response data : {response.data}")
-
-        # Assert the response status code
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-        # Assert the presence of "user_id" key in response data
-        assert "user_id" in response.data
-        assert isinstance(response.data["user_id"], list)
-
-
-
-@pytest.mark.django_db
-class Test_Schema_Validation_PersonalInfo_create_action:
-    """
-    test if schema of json in request is valid
-    """
-
-    def test_json_schema_validation_error(self, create_access_token_for_user ,personal_info_data):
-        # Create an API client
-        client = APIClient()
-
-        # create user and tokens
-        tokens, user = create_access_token_for_user()
-
-        # build invalid data {with missing 'user_id' key} using the factory
-        json_data, instance, user = personal_info_data(user)
-
-        # sending invalid type for integer type 'user_id'
-        json_data["user_id"] = True
-
-       # Send a POST request to the endpoint
-        headers = {"Origin": "https://web.postman.co", "Accept": "application/json", 
-                   "Authorization" : f"Bearer {tokens["access"]}"}
-
-        response = client.post(
-            reverse("get-personal-info-data-list"), data=json_data, headers=headers, format="json"
-        )
-        print(f"response data : {response.data}")
-
-        # Assert the response status code
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-        # Assert the presence of "user_id" key in response data
-        assert "user_id" in response.data
-        assert isinstance(response.data["user_id"], list)
-
 
 
 @pytest.mark.django_db

@@ -3,20 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-
-# Ignore SQLite database files
-*.sqlite3
-*.sqlite3-journal
-
-# Ignore Django migration files
-# Ignore the entire migrations directory for all apps
-*/migrations/
-*/migrations/*.py
-*/migrations/*.pyc
-
-
-
-
 # C extensions
 *.so
 

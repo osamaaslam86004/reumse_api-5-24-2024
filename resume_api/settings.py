@@ -27,7 +27,7 @@ SECRET_KEY = config("SECRET_KEY")
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 
 if DEBUG:
@@ -58,7 +58,6 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     "rest_framework_simplejwt",
-    "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
 ]
 
@@ -279,10 +278,6 @@ SPECTACULAR_SETTINGS = {
 # JWTs consist of three parts: a header, a payload, and a signature.
 # They are encoded as base64 strings and separated by dots (.).
 from datetime import timedelta
-
-
-# Disable DRF built-in session authentication
-REST_SESSION_LOGIN = False
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=2500),

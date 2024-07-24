@@ -1,4 +1,3 @@
-import logging
 from resume.models import PersonalInfo
 from resume.forms import (
     PersonalInfoForm,
@@ -36,21 +35,17 @@ from django.views import View
 from django.contrib import messages
 from django.conf import settings
 from resume_api.custom_user_rated_throtle_class import CustomUserRateThrottle
-from resume.validate_schema import ValidateJson
-
-
-logger = logging.getLogger(__name__)
 
 
 class Homepage(View):
     def get(self, request, **kwargs):
-        if settings.DEBUG:
+        if not settings.DEBUG:
             return HttpResponseRedirect(
-                "https://diverse-intense-whippet.ngrok-free.app/api/schema/swagger-ui/"
+                "https://osamaaslam.pythonanywhere.com/api/schema/swagger-ui/"
             )
         else:
             return HttpResponseRedirect(
-                "https://osamaaslam.pythonanywhere.com/api/schema/swagger-ui/"
+                "https://diverse-intense-whippet.ngrok-free.app/api/schema/swagger-ui/"
             )
 
 
@@ -124,7 +119,7 @@ class PersonalInfoWizard(SessionWizardView):
             projects.save()
 
             messages.success(self.request, "CV created successfully!")
-            if settings.DEBUG:
+            if not settings.DEBUG:
                 return HttpResponsePermanentRedirect(
                     "https://diverse-intense-whippet.ngrok-free.app/"
                 )
@@ -176,7 +171,7 @@ class PersonalInfoWizard(SessionWizardView):
             projects.save()
 
             messages.success(self.request, "CV created successfully!")
-            if settings.DEBUG:
+            if not settings.DEBUG:
                 return HttpResponsePermanentRedirect(
                     "https://diverse-intense-whippet.ngrok-free.app/"
                 )
@@ -189,7 +184,7 @@ class PersonalInfoWizard(SessionWizardView):
 @method_decorator(cache_control(private=True), name="dispatch")
 @method_decorator(cache_page(60 * 60 * 2), name="dispatch")
 @method_decorator(vary_on_headers("User-Agent"), name="dispatch")
-class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
+class PersonalInfo_List_CreateView(viewsets.ModelViewSet):
     queryset = PersonalInfo.objects.order_by("-id")
     lookup_field = "id"
     serializer_class = PersonalInfo_Serializer
@@ -207,13 +202,6 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
         response["X-RateLimit-Remaining"] = request.rate_limit["X-RateLimit-Remaining"]
 
     def create(self, request, *args, **kwargs):
-
-        # Validate request data
-        try:
-            self.validate_json(request.data)
-        except Exception as e:
-            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
-
         response = super().create(request, *args, **kwargs)
         self.add_throttle_headers(request, response)
         return response
@@ -287,18 +275,7 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
     def destroy(self, request, *args, **kwargs):
         personal_info_id = kwargs["id"]
         personal_info = PersonalInfo.objects.filter(id=personal_info_id)
-
-        print(
-            f"personal_info_id_delete---- : {personal_info}: request.user.id--- : {request.user.id}"
-        )
-
-        data = {
-            "id": personal_info_id,
-            "user_id": request.user.id,
-            "event": "cv_deleted",
-            "status": "DELETED",
-            "exception": "None",
-        }
+        print(f"personal_info_id__________delete___{personal_info}")
 
         if personal_info:
 
@@ -311,18 +288,17 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
                     # HTTP_204_NO_CONTENT  => Means Content / PersonalInfo Object Not Found
 
                     response = Response(
-                        {"data": data}, status=status.HTTP_204_NO_CONTENT
+                        {"success": "CV deleted successfully"},
+                        status=status.HTTP_204_NO_CONTENT,
                     )
 
             except Exception as e:
-                data["status"] = "FAILED"
-                data["exception"] = str(e)
                 response = Response(
-                    {"data": data}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         else:
             response = Response(
-                {"detail": "Personal Info does not exist"},
+                {"error": "Personal Info does not exist"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -333,35 +309,14 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
         user_id = request.query_params.get("user_id")
         personal_info_id = request.query_params.get("personal_info_id")
 
-        logger.debug(
-            f"Received user_id: {user_id}, personal_info_id: {personal_info_id}"
-        )
-
-        # check if "user_id" and "personal_info_id" are not none
-        if (
-            "user_id" not in request.query_params
-            and user_id is not None
-            and "personal_info_id" not in request.query_params
-            and personal_info_id is not None
-        ):
-            response = Response(
-                {
-                    "detail": "query parameters : 'user_id' or 'personal_info_id' is required"
-                }
-            )
-            self.add_throttle_headers(request, response)
-            return response
-
         filter_kwargs = {}
         try:
-            # Retrieve a particular instance only
-            if personal_info_id and user_id:
+            if personal_info_id:
                 queryset = self.get_queryset().filter(
                     id=personal_info_id, user_id=user_id
                 )
                 filter_kwargs = {"user_id": user_id, "id": personal_info_id}
             else:
-                # return list of personalinfo instances for user
                 queryset = self.get_queryset().filter(user_id=user_id)
                 filter_kwargs = {
                     "user_id": user_id,
@@ -370,7 +325,7 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
             response = Response(serializer.data)
 
         except Exception as e:
-            response = JsonResponse({"detail": str(e)})
+            response = JsonResponse({"error": str(e)})
 
         self.add_throttle_headers(request, response)
         return response
@@ -378,6 +333,8 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
     def patch_personal_info_for_user(self, request, *args, **kwargs):
         user_id = request.query_params.get("user_id")
         id = request.query_params.get("id")
+
+        # print(f"user id------ : {user_id} : id-----: {id}")
 
         # check for user id is not none and id is not empty
         if user_id is not None and id is not None:
@@ -407,7 +364,9 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
             self.add_throttle_headers(request, response)
             return response
 
+        # print(f"partial-------------- : {partial}")
         instance = PersonalInfo.objects.filter(user_id__id=user_id, id=id).first()
+        # print(f"instance-------: {instance}")
 
         if not instance:
             response = Response(
@@ -458,9 +417,9 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
         request = kwargs.get("request", None)
 
         if settings.DEBUG:
-            WEBHOOK_URL = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"
-        else:
             WEBHOOK_URL = "https://osama11111.pythonanywhere.com/cv-webhook/"
+        else:
+            WEBHOOK_URL = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"
 
         # Convert header values to strings
         headers = {
