@@ -66,6 +66,10 @@ class CustomCorsMiddleware:
             ):
                 return None
 
+        if origin is None:
+            if request.headers.get("Referer") == "http://127.0.0.1:5500":
+                return None
+
         return JsonResponse({"detail": "Origin not allowed"}, status=403)
 
     def process_response(self, request, response):

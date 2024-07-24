@@ -529,6 +529,10 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
 
         if self.metadata_class is None:
             return self.http_method_not_allowed(request, *args, **kwargs)
+
+        if request.method == "OPTIONS":
+            self.metadata_class = CustomMetadata
+
         data = self.metadata_class().determine_metadata(request, self)
         return Response(data, status=status.HTTP_200_OK)
 
