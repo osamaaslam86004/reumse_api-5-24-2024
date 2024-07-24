@@ -193,7 +193,7 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
     queryset = PersonalInfo.objects.order_by("-id")
     lookup_field = "id"
     serializer_class = PersonalInfo_Serializer
-    metadata_class = "CustomMetadata"
+    # metadata_class = "CustomMetadata"
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
     authentication_classes = [JWTStatelessUserAuthentication]
