@@ -18,15 +18,6 @@ class TemporaryStorage:
 @receiver(post_save, sender=PersonalInfo)
 def create_profile(sender, instance, **kwargs):
 
-    _serializer = kwargs.get("serializer", None)
-
-    # Check if the serializer exists and if it's a create operation
-    if _serializer and not getattr(_serializer, "is_create", False):
-        return
-
-    logger.error(f"serializer: {_serializer}---- : is_create : {getattr(_serializer, 'is_create', False)}")
-    print(f"serializer: {_serializer}---- : is_create : {getattr(_serializer, 'is_create', False)}")
-
     if instance:
         data = {
             "id": instance.id,
@@ -40,15 +31,15 @@ def create_profile(sender, instance, **kwargs):
         logger.error(f"data in signal: {data}")
 
         if settings.DEBUG:
-            webhook_url = "https://osama11111.pythonanywhere.com/cv-webhook/"
-        else:
             webhook_url = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"
+        else:
+            webhook_url = "https://osama11111.pythonanywhere.com/cv-webhook/"
 
         headers = {"Content-Type": "application/json"}
 
         session = requests.Session()
         retries = Retry(
-            total=3, backoff_factor=0.1, status_forcelist=[504, 500, 502, 503]
+            total=3, backoff_factor=1, status_forcelist=[504, 500, 502, 503]
         )
         session.mount("https://", HTTPAdapter(max_retries=retries))
 
@@ -79,9 +70,9 @@ def send_webhook_on_cv_delete(sender, instance, **kwargs):
     attributes = TemporaryStorage.storage.pop(instance.id, None)
 
     if settings.DEBUG:
-        webhook_url = "https://osama11111.pythonanywhere.com/cv-webhook/"
-    else:
         webhook_url = "https://diverse-intense-whippet.ngrok-free.app/cv-webhook/"
+    else:
+        webhook_url = "https://osama11111.pythonanywhere.com/cv-webhook/"
 
     data = {
         "event": "cv_deleted",
@@ -94,7 +85,7 @@ def send_webhook_on_cv_delete(sender, instance, **kwargs):
     headers = {"Content-Type": "application/json"}
 
     session = requests.Session()
-    retries = Retry(total=3, backoff_factor=0.1, status_forcelist=[504, 500, 502, 503])
+    retries = Retry(total=3, backoff_factor=1, status_forcelist=[504, 500, 502, 503])
     session.mount("https://", HTTPAdapter(max_retries=retries))
 
     try:

@@ -14,22 +14,23 @@ class CustomCorsMiddleware:
             "osamaaslam.pythonanywhere.com",
             "diverse-intense-whippet.ngrok-free.app",
         ]
+        logger.info(f"Host URL: {self.host_url}")
 
     def __call__(self, request):
         origin = request.headers.get("Origin")
-        # logger.info(f"Request Origin: {origin}")
+        logger.info(f"Request Origin: {origin}")
 
         host = request.headers.get("Host")
-        # logger.info(f"Request Host: {host}")
+        logger.info(f"Request Host: {host}")
 
         # Combine both allowed origins and CSRF trusted origins
         combined_origins = (
             self.allowed_origins + self.trusted_csrf_origins
-        )  # this will allow CORS to submit forms using CSRF token validation
-        # logger.info(f"Combined Origins: {combined_origins}")
+        )
+        logger.info(f"Combined Origins: {combined_origins}")
 
         response = self.process_request_before_process_view(
-            request, combined_origins, host
+            request, combined_origins, host, origin
         )
         if response:
             return response
@@ -38,23 +39,26 @@ class CustomCorsMiddleware:
             response = self.process_response(request, response)
             return response
 
-    def process_request_before_process_view(self, request, combined_origins, host):
+    def process_request_before_process_view(self, request, combined_origins, host, origin):
         """
         process the request before self.process_view() is called
         """
-        origin = request.headers.get("Origin")
-        if origin in combined_origins:
-            return None
-        elif host in self.host_url:
+
+        if origin is None and host in self.host_url:
+             logger.info(f"Server--------------{request.headers.get('Server', '').lower() }")
+             return None
+             if request.headers.get('Server', '') != "PythonAnywhere":
+                 return JsonResponse({"detail": "Origin not allowed"}, status=403)
+
+        elif origin in combined_origins:
             return None
         else:
-            return JsonResponse({"detail": "Origin not allowed"}, status=403)
+            if host in self.host_url:
+                return None
+            else:
+                return JsonResponse({"detail": "Origin not allowed"}, status=403)
 
     def process_response(self, request, response):
-        # for header in response.headers:
-        #     logger.info(
-        #         f"header name in middleware: {header}-------------------- : {response.headers[header]}"
-        #     )
 
         # Do not enforce Origin if it's already set correctly
         origin = request.headers.get("Origin")
@@ -75,17 +79,15 @@ class CustomCorsMiddleware:
         # response.headers["Vary"] = ", ".join(vary_headers)
 
         response["Access-Control-Allow-Credentials"] = "true"
-        """
-        added "Access-Control-Allow-Headers" after updating "Vary", it will automatically updates
-        the Vary header value in the Access-Control-Allow-Headers dictionary. This dictioanry 
-        is mentioned in comments below:
-        """
-        response["Access-Control-Allow-Headers"] = response.headers
 
-        # for header in response.headers:
-        #     logger.info(
-        #         f"header coming out of API: {header}--------- : {response.headers[header]}"
-        #     )
+        # Extract all headers and format them as a comma-separated string
+        allow_headers = ", ".join(response.headers.keys())
+        response["Access-Control-Allow-Headers"] = allow_headers
+
+        for header in response.headers:
+            logger.info(
+                f"header coming out of API: {header}--------- : {response.headers[header]}"
+            )
 
         return response
 

@@ -34,7 +34,7 @@ if DEBUG:
     ALLOWED_HOSTS = [
         "127.0.0.1",
         "localhost",
-        "diverse-intense-whippet.ngrok-free.app",
+        # "diverse-intense-whippet.ngrok-free.app",
         "osamaaslam.pythonanywhere.com",
     ]
 else:
@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     "rest_framework_simplejwt",
+    # "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
 ]
 
@@ -173,8 +174,9 @@ MEDIA_URL = "/media/"
 CORS_ALLOWED_ORIGINS = [
     "https://osama11111.pythonanywhere.com",
     "https://osamaaslam.pythonanywhere.com",
-    "https://web.postman.co",
+    # "https://web.postman.co",
     "https://diverse-intense-whippet.ngrok-free.app",
+    # "http://127.0.0.1:5500"
 ]
 
 CORS_ALLOW_METHODS = [
@@ -200,8 +202,7 @@ CORS_ALLOW_HEADERS = [
 
 if DEBUG:
     CSRF_TRUSTED_ORIGINS = [
-        "http://127.0.0.1",
-        "http://localhost",
+        # "http://127.0.0.1:5500",
         "https://diverse-intense-whippet.ngrok-free.app",
         "https://osamaaslam.pythonanywhere.com",
         "https://osama11111.pythonanywhere.com",
@@ -209,9 +210,10 @@ if DEBUG:
 else:
     # authenticate teh request only, checking if it has CSRF token comming here from django-e-commrace
     CSRF_TRUSTED_ORIGINS = [
+        # "http://127.0.0.1:5500",
         "https://osamaaslam.pythonanywhere.com",
         "https://osama11111.pythonanywhere.com",
-        "https://web.postman.co",
+        # "https://web.postman.co",
         "https://diverse-intense-whippet.ngrok-free.app",
     ]
 
@@ -278,6 +280,10 @@ SPECTACULAR_SETTINGS = {
 # JWTs consist of three parts: a header, a payload, and a signature.
 # They are encoded as base64 strings and separated by dots (.).
 from datetime import timedelta
+
+
+# Disable DRF built-in session authentication
+REST_SESSION_LOGIN = False
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=2500),
