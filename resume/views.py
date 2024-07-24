@@ -37,7 +37,7 @@ from django.contrib import messages
 from django.conf import settings
 from resume_api.custom_user_rated_throtle_class import CustomUserRateThrottle
 from resume.validate_schema import ValidateJson
-
+from resume.custom_metadata import CustomMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -193,6 +193,7 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
     queryset = PersonalInfo.objects.order_by("-id")
     lookup_field = "id"
     serializer_class = PersonalInfo_Serializer
+    metadata_class = "CustomMetadata"
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
     authentication_classes = [JWTStatelessUserAuthentication]
@@ -307,9 +308,7 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
                     self.perform_destroy(personal_info[0])
                     print("perform deleted is perfomed")
 
-                    response = Response(
-                        {"data": data}, status=status.HTTP_200_OK
-                    )
+                    response = Response({"data": data}, status=status.HTTP_200_OK)
 
             except Exception as e:
                 data["status"] = "FAILED"
@@ -518,7 +517,6 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
         response["Content-Type"] = "application/json"
         return response
 
-
     def get_object(self):
         request = self.request
 
@@ -533,9 +531,6 @@ class PersonalInfo_List_CreateView(viewsets.ModelViewSet, ValidateJson):
             return self.http_method_not_allowed(request, *args, **kwargs)
         data = self.metadata_class().determine_metadata(request, self)
         return Response(data, status=status.HTTP_200_OK)
-
-
-
 
 
 # from django.core.files.storage import FileSystemStorage
